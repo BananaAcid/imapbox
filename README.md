@@ -1,7 +1,8 @@
 ![IMAPBOX](logo.png)
 
-_This is a modified version, to include functions that I believe are helpful.
-I use it together with ImapSync._
+> [!Why a fork?]
+> This is a modified version, to include functions that I believe are helpful as CLI tool and a Docker service.
+> I use it together with ImapSync.
 
 Dump IMAP inbox to a local folder in a regular backupable format: HTML, PDF, JSON and attachments.
 
