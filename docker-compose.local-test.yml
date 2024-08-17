@@ -1,0 +1,14 @@
+version: '3'
+services:
+
+  imapbox:
+    build:
+      context: ./
+      dockerfile: Dockerfile 
+    container_name: imapbox
+    volumes:
+      # change the path './backup' to your back up folder
+      - ./tmp/backup/:/var/imapbox/
+      # change the path './config.cfg' to the config
+      - ./tmp/config.cfg:/etc/imapbox/config.cfg
+
