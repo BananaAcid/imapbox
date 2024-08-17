@@ -1,6 +1,6 @@
 ![IMAPBOX](logo.png)
 
-> [!Why a fork?]
+> [!NOTE] Why a fork?
 > This is a modified version, to include functions that I believe are helpful as CLI tool and a Docker service.
 > I use it together with ImapSync.
 
