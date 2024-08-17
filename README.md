@@ -1,5 +1,8 @@
 ![IMAPBOX](logo.png)
 
+_This is a modified version, to include functions that I believe are helpful.
+I use it together with ImapSync._
+
 Dump IMAP inbox to a local folder in a regular backupable format: HTML, PDF, JSON and attachments.
 
 This program aims to save a mailbox for archive using files in indexable or searchable formats. The produced files should be readable without external software, for example, to find an email in backups using only the terminal.
@@ -16,14 +19,7 @@ __metadata.json__ | Various informations in JSON format, date, recipients, body 
 __raw.eml.gz__    | A gziped version of the email in `.eml` format.
 
 Imapbox was designed to archive multiple mailboxes in one common directory tree,
-copies of the same message spread knew several account will be archived once using the Message-Id property.
-
-## Install
-
-This script requires Python 3.4 for `master` branch or python 2 on the `python2` branch and the following libraries:
-* [six](https://pypi.org/project/six)
-* [chardet](https://pypi.python.org/pypi/chardet) – required for character encoding detection.
-* [pdfkit](https://pypi.python.org/pypi/pdfkit) – optionally required for archiving emails to PDF.
+copies of the same message spread knew several account will be archived once using the Message-Id property, if possible (ID not missing, ID not to long for filesystem).
 
 ## Use cases
 
@@ -146,19 +142,54 @@ Example with a filter on UTC date:
 find . -name "*.json" | xargs cat | jq 'select(.Utc > "20150221T130000Z")'
 ```
 
-## Docker compose
+## Local install
+
+This script requires Python 3.4 for `master` branch and the following libraries:
+* [six](https://pypi.org/project/six)
+* [chardet](https://pypi.python.org/pypi/chardet) – required for character encoding detection.
+* [pdfkit](https://pypi.python.org/pypi/pdfkit) – optionally required for archiving emails to PDF.
+
+### Installation
+
+Python 3.x must be installed allready
+
+```bash
+git clone https://github.com/polo2ro/imapbox.git ./imapbox
+
+cd imapbox 
+
+python3 -m venv ./
+source ./bin/activate
+
+pip install --no-cache-dir -r requirements.txt
+
+cd ..
+```
+
+```bash
+# usage
+# a config.cfg is expected as described above
+python ./imapbox/imapbox.py
+```
+
+## Usage with Docker compose
 
 ```
 version: '3'
 services:
 
   imapbox:
-    image: mauricemueller/imapbox
+    image: bananaacid/imapbox
     container_name: imapbox
     volumes:
+      # use a docker volume, as backup location
       - imapbox_data:/var/imapbox
-      # change the path to the config
-      - ./test/config.cfg:/etc/imapbox/config.cfg
+
+      # if you want to specify a specific folder as backup folder
+      #- ./tmp/backup/:/var/imapbox/
+
+      # change the path './tmp/config.cfg' to the config
+      - ./tmp/config.cfg:/etc/imapbox/config.cfg
 
 volumes:
   imapbox_data:
@@ -166,7 +197,32 @@ volumes:
 
 `docker-compose run --rm imapbox`
 
-## Build own docker image and push to dockerhub
+## Build an executable
+
+Within the same Py-Env, do:
+```bash
+pip install --no-cache-dir  pyinstaller
+
+pyinstaller --onefile ./imapbox/imapbox.py  
+```
+
+The resulting executable will be generated into the ./dist folder.
+
+## Test with the Dockerfile
+
+Use the test file to check if everything works as expected:
+
+```bash
+docker compose -f ./docker-compose.local-test.yml  up
+```
+Note, the following must exist:
+```
+./tmp/backup/       -- folder to backup to
+./tmp/config.cfg    -- config to use
+```
+
+## Build own docker image and deploy to dockerhub
+
 1. `docker login`
 1. `docker-compose build`
 1. `docker tag imapbox:latest [USERNAME]/imapbox:latest`
