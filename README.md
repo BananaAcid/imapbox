@@ -195,7 +195,7 @@ volumes:
   imapbox_data:
 ```
 
-`docker-compose run --rm imapbox`
+`docker compose run --rm imapbox`
 
 ## Build an executable
 
@@ -221,12 +221,15 @@ Note, the following must exist:
 ./tmp/config.cfg    -- config to use
 ```
 
+If you run this multiple times, remove the previously generated images and containers.
+
 ## Build own docker image and deploy to dockerhub
 
-1. `docker login`
-1. `docker-compose build`
-1. `docker tag imapbox:latest [USERNAME]/imapbox:latest`
-1. `docker push [USERNAME]/imapbox:latest`
+1. Create a new repository at Docker Hub
+2. `docker login`
+3. `docker build -t imapbox:latest .`
+4. `docker tag imapbox:latest [USERNAME]/imapbox:latest`
+5. `docker push [USERNAME]/imapbox:latest`
 
 
 ## Similar projects
