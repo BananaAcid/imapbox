@@ -3,7 +3,7 @@
 > [!NOTE]
 > **Why a fork?**
 > 
-> This is a modified version, to include functions that I believe are helpful as CLI tool and a Docker service.
+> This is a modified version, to include functions that I believe are helpful as CLI tool and a Docker service, as well as extending the readme with helpful infos.
 > I use it together with ImapSync.
 
 Dump IMAP inbox to a local folder in a regular backupable format: HTML, PDF, JSON and attachments.
@@ -143,6 +143,16 @@ Example with a filter on UTC date:
 
 ```bash
 find . -name "*.json" | xargs cat | jq 'select(.Utc > "20150221T130000Z")'
+```
+
+
+Powershell examples:
+
+```powershell
+gci -r -filter *.json |% { gc $_ | ConvertFrom-Json } |? { $_.Subject -imatch "Welcome" }
+gci -r -filter *.json |% { gc $_ | ConvertFrom-Json } |? { $_.From -imatch "Support" }
+gci -r -filter *.json |% { gc $_ | ConvertFrom-Json } |? { $_.Date -imatch "13 Aug 2024" }
+gci -r -filter *.json |% { gc $_ | ConvertFrom-Json } |? { $_.UTC -gt "20240813T164821Z"  }
 ```
 
 ## Local install
