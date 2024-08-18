@@ -206,7 +206,7 @@ Within the same Py-Env, do:
 ```bash
 pip install --no-cache-dir  pyinstaller
 
-pyinstaller --onefile ./imapbox/imapbox.py  
+pyinstaller --add-data "VERSION:." --onefile ./imapbox/imapbox.py  
 ```
 
 The resulting executable will be generated into the ./dist folder.

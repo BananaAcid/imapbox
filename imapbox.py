@@ -5,6 +5,7 @@ from mailboxresource import save_emails, get_folder_fist, get_account
 import argparse
 from six.moves import configparser
 import os
+import sys
 import getpass
 
 
@@ -116,7 +117,7 @@ def load_configuration(args):
     if (args.show_version):
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'VERSION'), 'r') as version_file:
             print('v' + version_file.read())
-        exit(0)
+        sys.exit(0)
     
     return options
 
