@@ -43,11 +43,19 @@ def load_configuration(args):
             options['test_only'] = config.getboolean('imapbox', 'test_only')
 
     if args.specific_dsn:
-        account = get_account(args.specific_dsn)
-        if (None == account['host'] or None == account['username'] or None == account['password']):
-            print('Invalid DSN: ' + args.specific_dsn)
-        else:
-            options['accounts'].append(account)
+        try:
+            account = get_account(args.specific_dsn)
+            if (None == account['host'] or None == account['username'] or None == account['password']):
+                raise ValueError('host / uername or password not set')
+            
+        except Exception as e:
+            if hasattr(e, 'strerror'):
+                print('\x1b[31;20m' + 'Invalid DSN (' + args.specific_dsn + '): ' + e.strerror + '\x1b[0m')
+            else:
+                print('\x1b[31;20m' + 'Invalid DSN (' + args.specific_dsn + '): ', e, '\x1b[0m')
+            sys.exit(1)
+        
+        options['accounts'].append(account)
 
     else:
         for section in config.sections():
@@ -126,15 +134,15 @@ def load_configuration(args):
 
 def main():
     argparser = argparse.ArgumentParser(description="Dump a IMAP folder into .eml files")
-    argparser.add_argument('-l', dest='local_folder', help="Local folder where to create the email folders")
-    argparser.add_argument('-d', dest='days', help="Number of days back to get in the IMAP account", type=int)
-    argparser.add_argument('-w', dest='wkhtmltopdf', help="The location of the wkhtmltopdf binary")
-    argparser.add_argument('-a', dest='specific_account', help="Select a specific account to backup")
-    argparser.add_argument('-f', dest='specific_folders', help="Backup into specific account subfolders", action='store_true')
-    argparser.add_argument('-t', dest='test_only', help="Only a connection and folder retrival test will be performed", action='store_true')
+    argparser.add_argument('-l', '--local-folder', dest='local_folder', help="Local folder where to create the email folders")
+    argparser.add_argument('-d', '--days', dest='days', help="Number of days back to get in the IMAP account", type=int)
+    argparser.add_argument('-n', '--dsn', dest='specific_dsn', help="Use a specific DSN as account")
+    argparser.add_argument('-a', '--account', dest='specific_account', help="Select a specific account to backup")
+    argparser.add_argument('-f', '--folders', dest='specific_folders', help="Backup into specific account subfolders", action='store_true')
+    argparser.add_argument('-w', '--wkhtmltopdf', dest='wkhtmltopdf', help="The location of the wkhtmltopdf binary")
+    argparser.add_argument('-t', '--test', dest='test_only', help="Only a connection and folder retrival test will be performed", action='store_true')
+    argparser.add_argument('-c', '--config', dest='specific_config', help="Path to a config file to use")
     argparser.add_argument('-v', '--version', dest='show_version', help="Show the current version", action="store_true")
-    argparser.add_argument('-c', dest='specific_config', help="Path to a config file to use")
-    argparser.add_argument('-n', dest='specific_dsn', help="Use a specific DSN as account")
     args = argparser.parse_args()
     options = load_configuration(args)
     rootDir = options['local_folder']

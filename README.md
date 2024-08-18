@@ -36,7 +36,7 @@ copies of the same message spread knew several account will be archived once usi
 
 Use `./config.cfg` `~/.config/imapbox/config.cfg` or `/etc/imapbox/config.cfg`
 
-Alternatively specifiy the shell argument `-c` to provide the path to a config file. E.g. `-c ./config.client1.cfg`
+Alternatively specifiy the shell argument `-c` (or `--config`) to provide the path to a config file. E.g. `-c ./config.client1.cfg`
 
 Example:
 ```ini
@@ -60,17 +60,19 @@ remote_folder=INBOX
 port=993
 ```
 
+To run only a single account, the shell argument `-a` or `--account` can be used to specify which to use.
+
 ### The imapbox section
 
 Possibles parameters for the imapbox section:
 
 Parameter       | Description
 ----------------|----------------------
-local_folder    | The full path to the folder where the emails should be stored. If the local_folder is not set, imapbox will download the emails in the current directory. This can be overwritten with the shell argument `-l`.
-days            | Number of days back to get in the IMAP account, this should be set greater and equals to the cronjob frequency. If this parameter is not set, imapbox will get all the emails from the IMAP account. This can be overwritten with the shell argument `-d`.
-wkhtmltopdf     | (optional) The location of the `wkhtmltopdf` binary. By default `pdfkit` will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w`.
-specific_folders| (optional) Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f`.
-test_only       | (optional) Only a connection and folder retrival test will be performed. This can be overwritten with the shell argument `-t`.
+local_folder    | The full path to the folder where the emails should be stored. If the local_folder is not set, imapbox will download the emails in the current directory. This can be overwritten with the shell argument `-l` or `--local-folder`.
+days            | Number of days back to get in the IMAP account, this should be set greater and equals to the cronjob frequency. If this parameter is not set, imapbox will get all the emails from the IMAP account. This can be overwritten with the shell argument `-d` or `--days`.
+wkhtmltopdf     | (optional) The location of the `wkhtmltopdf` binary. By default `pdfkit` will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
+specific_folders| (optional) Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
+test_only       | (optional) Only a connection and folder retrival test will be performed. This can be overwritten with the shell argument `-t` or `--test`.
 
 ### Other sections
 
@@ -85,8 +87,8 @@ username        | Login id for the IMAP server.
 password        | (optional) The password will be saved in cleartext, for security reasons, you have to run the imapbox script in userspace and set `chmod 700` on your `~/.config/mailbox/config.cfg` file. The user will prompted for a password if this parameter is missing.
 remote_folder   | (optional) IMAP folder name (multiple folder name is not supported for the moment). Default value is `INBOX`. You can use `__ALL__` to fetch all folders.
 port            | (optional) Default value is `993`.
-ssl            | (optional) Default value is `False`. Set to `True` to enable SSL
-dsn             | (optinoal) Use a specific DSN to set account paramaters. All other parameters in the account section will overwrite these. This can be used with the shell argument `-n <dsn>`. Example: `imaps://username:password@imap.server.tld:993/__ALL__`
+ssl             | (optional) Default value is `False`. Set to `True` to enable SSL
+dsn             | (optinoal) Use a specific DSN to set account paramaters. All other parameters in the account section will overwrite these. To supply a single account only (instead of the config), this can be used with the shell argument `-n <dsn>` and `--dsn <dsn>`. Example: `imaps://username:password@imap.server.tld:993/__ALL__`
 
 ## Metadata file
 
