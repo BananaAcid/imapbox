@@ -157,17 +157,15 @@ gci -r -filter *.json |% { gc $_ | ConvertFrom-Json } |? { $_.UTC -gt "20240813T
 
 ## Local install
 
-This script requires Python 3.4 for `master` branch and the following libraries:
-* [six](https://pypi.org/project/six)
+This script requires **Python 3.4+** and the following libraries:
+* [six](https://pypi.org/project/six) – a Python 2 and 3 compatibility library
 * [chardet](https://pypi.python.org/pypi/chardet) – required for character encoding detection.
 * [pdfkit](https://pypi.python.org/pypi/pdfkit) – optionally required for archiving emails to PDF.
 
 ### Installation
 
-Python 3.x must be installed allready
-
 ```bash
-git clone https://github.com/polo2ro/imapbox.git ./imapbox
+git clone https://github.com/bananaacid/imapbox.git ./imapbox
 
 cd imapbox 
 
@@ -192,7 +190,7 @@ version: '3'
 services:
 
   imapbox:
-    image: bananaacid/imapbox
+    image: bananaacid/imapbox:latest
     container_name: imapbox
     volumes:
       # use a docker volume, as backup location
