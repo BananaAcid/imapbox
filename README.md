@@ -234,6 +234,7 @@ If you run this multiple times, remove the previously generated images and conta
 4. `docker tag imapbox:latest [USERNAME]/imapbox:latest`
 5. `docker push [USERNAME]/imapbox:latest`
 
+Pushing to Docker Hub requires the image name ("username/imapbox") to be exactly what the website shows in "Docker commands". 
 
 ## Similar projects
 
