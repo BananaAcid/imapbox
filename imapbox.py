@@ -115,7 +115,7 @@ def load_configuration(args):
 
     if (args.show_version):
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'VERSION'), 'r') as version_file:
-            print(version_file.read())
+            print('v' + version_file.read())
         exit(0)
     
     return options

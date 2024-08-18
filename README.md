@@ -231,8 +231,10 @@ If you run this multiple times, remove the previously generated images and conta
 1. Create a new repository at Docker Hub
 2. `docker login`
 3. `docker build -t imapbox:latest .`
-4. `docker tag imapbox:latest [USERNAME]/imapbox:latest`
-5. `docker push [USERNAME]/imapbox:latest`
+4. `docker tag imapbox:latest [USERNAME]/imapbox:$(cat VERSION)`
+5. `docker tag imapbox:latest [USERNAME]/imapbox:latest`
+6. `docker push [USERNAME]/imapbox:$(cat VERSION)`
+7. `docker push [USERNAME]/imapbox:latest`
 
 Pushing to Docker Hub requires the image name ("username/imapbox") to be exactly what the website shows in "Docker commands". 
 
