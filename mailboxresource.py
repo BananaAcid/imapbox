@@ -10,6 +10,7 @@ import hashlib
 from message import Message
 import datetime
 import urllib
+from utilities import errorHandler
 
 
 class MailboxClient:
@@ -28,7 +29,7 @@ class MailboxClient:
             adjust_remote_folder = re.sub('\.', '/', remote_folder)
             typ, data = self.mailbox.select(adjust_remote_folder, readonly=True)
             if typ != 'OK':
-                print("MailboxClient: Could not select remote folder '%s'" % remote_folder)
+                errorHandler(remote_folder, 'MailboxClient: Could not select remote folder', exitCode=None)
 
 
     def copy_emails(self, days, local_folder, wkhtmltopdf):
@@ -113,11 +114,7 @@ class MailboxClient:
                 except Exception as e:
                     # ex: Unsupported charset on decode
                     print(directory)
-                    if hasattr(e, 'strerror'):
-                        print("MailboxClient.saveEmail() failed:", e.strerror)
-                    else:
-                        print("MailboxClient.saveEmail() failed")
-                        print(e)
+                    errorHandler(e, 'MailboxClient.saveEmail() failed', exitCode=None)
 
         return True
 

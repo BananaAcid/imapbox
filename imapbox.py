@@ -7,6 +7,7 @@ from six.moves import configparser
 import os
 import sys
 import getpass
+from utilities import errorHandler
 
 
 def load_configuration(args):
@@ -46,14 +47,10 @@ def load_configuration(args):
         try:
             account = get_account(args.specific_dsn)
             if (None == account['host'] or None == account['username'] or None == account['password']):
-                raise ValueError('host / uername or password not set')
+                raise ValueError('host / username or password not set')
             
         except Exception as e:
-            if hasattr(e, 'strerror'):
-                print('\x1b[31;20m' + 'Invalid DSN (' + args.specific_dsn + '): ' + e.strerror + '\x1b[0m')
-            else:
-                print('\x1b[31;20m' + 'Invalid DSN (' + args.specific_dsn + '): ', e, '\x1b[0m')
-            sys.exit(1)
+            errorHandler(e, 'Invalid DSN (' + args.specific_dsn + ')')
         
         options['accounts'].append(account)
 
@@ -102,7 +99,7 @@ def load_configuration(args):
                 account['remote_folder'] = config.get(section, 'remote_folder')
 
             if (None == account['host'] or None == account['username'] or None == account['password']):
-                print('Invalid account: ' + section)
+                errorHandler(section, 'Invalid account')
                 continue
 
             options['accounts'].append(account)
@@ -157,9 +154,9 @@ def main():
         if options['test_only']:
             try:
                 get_folder_fist(account)
-                print(" - SUCCESS: Login and folder retrival")
+                print(' - SUCCESS: Login and folder retrival')
             except:
-                print("\x1b[31;20m" + " - FAILED: Login and folder retrival" + "\x1b[0m")
+                errorHandler(None, ' - FAILED: Login and folder retrival', exitCode=None)
             continue
 
         if options['specific_folders']:
@@ -167,21 +164,24 @@ def main():
         else:
             basedir = rootDir
 
-        if account['remote_folder'] == "__ALL__":
-            folders = []
-            for folder_entry in get_folder_fist(account):
-                folders.append(folder_entry.decode().replace("/",".").split(' "." ')[1])
-            # Remove Gmail parent folder from array otherwise the script fails:
-            if '"[Gmail]"' in folders: folders.remove('"[Gmail]"')
-            # Remove Gmail "All Mail" folder which just duplicates emails:
-            if '"[Gmail].All Mail"' in folders: folders.remove('"[Gmail].All Mail"')
-        else:
-            folders = str.split(account['remote_folder'], ',')
-        for folder_entry in folders:
-            print("Saving folder: " + folder_entry) 
-            account['remote_folder'] = folder_entry
-            options['local_folder'] = os.path.join(basedir, folder_entry.replace('"', ''))
-            save_emails(account, options)
+        try:
+            if account['remote_folder'] == "__ALL__":
+                folders = []
+                for folder_entry in get_folder_fist(account):
+                    folders.append(folder_entry.decode().replace("/",".").split(' "." ')[1])
+                # Remove Gmail parent folder from array otherwise the script fails:
+                if '"[Gmail]"' in folders: folders.remove('"[Gmail]"')
+                # Remove Gmail "All Mail" folder which just duplicates emails:
+                if '"[Gmail].All Mail"' in folders: folders.remove('"[Gmail].All Mail"')
+            else:
+                folders = str.split(account['remote_folder'], ',')
+            for folder_entry in folders:
+                print("Saving folder: " + folder_entry) 
+                account['remote_folder'] = folder_entry
+                options['local_folder'] = os.path.join(basedir, folder_entry.replace('"', ''))
+                save_emails(account, options)
+        except Exception as e:
+            errorHandler(e, ' - FAILED')
 
 
 if __name__ == '__main__':
