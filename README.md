@@ -21,12 +21,13 @@ __message.txt__   | This file contain the body text if available in the original
 __metadata.json__ | Various informations in JSON format, date, recipients, body text, etc... This file can be used from external applications or a search engine like [Elasticsearch](http://www.elasticsearch.com/).
 __raw.eml.gz__    | A gziped version of the email in `.eml` format.
 
-Imapbox was designed to archive multiple mailboxes in one common directory tree,
+Imapbox was designed to archive multiple mailboxes in one common folder tree,
 copies of the same message spread knew several account will be archived once using the Message-Id property, if possible (ID not missing, ID not to long for filesystem).
 
 ## Use cases
 
-* I use the script to merge all my mail accounts in one searchable directory on my NAS server.
+* Merge multiple mail accounts in one searchable folder.
+* Archive multiple accounts into different folders.
 * Report on a website the content of an email address, like a mailing list.
 * Sharing address of several employees to perform cross-searches on a common database.
 * Archiving an IMAP account because of mailbox size restrictions, or to restrain the used disk space on the IMAP server.
@@ -68,7 +69,7 @@ Possibles parameters for the imapbox section:
 
 Parameter       | Description
 ----------------|----------------------
-local_folder    | The full path to the folder where the emails should be stored. If the local_folder is not set, imapbox will download the emails in the current directory. This can be overwritten with the shell argument `-l` or `--local-folder`.
+local_folder    | The full path to the folder where the emails should be stored. If the local_folder is not set, imapbox will download the emails in the current folder. This can be overwritten with the shell argument `-l` or `--local-folder`.
 days            | Number of days back to get in the IMAP account, this should be set greater and equals to the cronjob frequency. If this parameter is not set, imapbox will get all the emails from the IMAP account. This can be overwritten with the shell argument `-d` or `--days`.
 wkhtmltopdf     | (optional) The location of the `wkhtmltopdf` binary. By default `pdfkit` will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
 specific_folders| (optional) Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
@@ -116,13 +117,19 @@ Create an index:
 curl -XPUT 'localhost:9200/imapbox?pretty'
 ```
 
-Add all emails to index:
+Add all emails to the index:
 
 ```bash
 #!/bin/bash
 cd emails/
-for ID in */ ; do
-    curl -XPUT "localhost:9200/imapbox/message/${ID}?pretty" --data-binary "@${ID}/metadata.json"
+
+IFS=$'\n'
+for METADATAPATH in $(find . -name "metadata.json"); do
+
+    subdir="${LINE%/metadata.json}"
+    ID="${subdir##*/}"
+
+    curl -XPUT "localhost:9200/imapbox/message/${ID}?pretty" --data-binary "@${METADATAPATH}"
 done
 ```
 
