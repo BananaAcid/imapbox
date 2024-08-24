@@ -4,3 +4,14 @@ __pycache__/
 config.cfg
 .idea
 tmp/**
+.history
+
+.test/
+bin/
+build/
+dist/
+include/
+lib/
+*.spec
+pyvenv.cfg
+.env
