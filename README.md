@@ -207,6 +207,32 @@ gci -r -filter *.json |% { gc $_ | ConvertFrom-Json } |? { $_.Date -imatch "13 A
 gci -r -filter *.json |% { gc $_ | ConvertFrom-Json } |? { $_.UTC -gt "20240813T164821Z"  }
 ```
 
+## Restoring emails
+
+The EML files are the restoreable files. These can be opened with Outlook, Thunderbird, MacOS Mail and most other email software, as well as showing the UTF-8 content on commandline.
+
+The EML files text files, UTF-8 encoded, and compressed by gzip before backuped.
+
+### Using a graphical desktop
+
+The unziped files can be double-clicked on most systems to view the mail, and may be drag-and-dropped into a mail account to be uploaded to that account.
+
+It might help to navigate with a file browser into the specific backup folder, find all `raw.eml.gz` files, unzip them into a temp folder, then drag all EML files from there into your mail softwares account's folder.
+
+### Using the commandline
+
+- If you're using Windows, you can extract GZ files using the `tar -xvzf filename.gz` command in Command Prompt or by installing the 7-Zip program and using `7zip x filename.gz`
+  ```
+  tar:
+  x = eXtract 
+  z = filter through gZip
+  v = be Verbose (show activity)
+  f = filename
+  ```
+- On a Mac, just double-click the file to extract it, or use the command `gunzip filename.gz` in a Terminal window.
+- If you're using Linux, use the `gzip -d filename.gz` to extract the files.
+
+
 ## Local install
 
 This script requires **Python 3.4+** and the following libraries:
