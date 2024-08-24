@@ -136,6 +136,18 @@ def get_folder_fist(account):
     mailbox.logout()
     return folder_list
 
+
+def get_folders(account):
+    folders = []
+    for folder_entry in get_folder_fist(account):
+        folders.append(folder_entry.decode().replace("/",".").split(' "." ')[1])
+    # Remove Gmail parent folder from array otherwise the script fails:
+    if '"[Gmail]"' in folders: folders.remove('"[Gmail]"')
+    # Remove Gmail "All Mail" folder which just duplicates emails:
+    if '"[Gmail].All Mail"' in folders: folders.remove('"[Gmail].All Mail"')
+    return folders
+
+
 # DSN:
 # defaults to INBOX, path represents a single folder:
 #  imap://username:password@imap.gmail.com:993/

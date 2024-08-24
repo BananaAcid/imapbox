@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-from mailboxresource import save_emails, get_folder_fist, get_account
+from mailboxresource import save_emails, get_folder_fist, get_folders, get_account
 import argparse
 from six.moves import configparser
 import os
@@ -43,7 +43,10 @@ def load_configuration(args):
             options['specific_folders'] = config.getboolean('imapbox', 'specific_folders')
 
         if config.has_option('imapbox', 'test_only'):
-            options['test_only'] = config.getboolean('imapbox', 'test_only')
+            if config.get('imapbox', 'test_only') == 'folders':
+                options['test_only'] = 'folders'
+            else:
+                options['test_only'] = config.getboolean('imapbox', 'test_only')
 
     if args.specific_dsn:
         try:
@@ -119,7 +122,10 @@ def load_configuration(args):
         options['specific_folders'] = True
 
     if (args.test_only):
-        options['test_only'] = True
+        if args.test_only == 'folders':
+            options['test_only'] = 'folders'
+        else:
+            options['test_only'] = True
 
     if (args.search_filter):
         options['search_filter'] = args.search_filter
@@ -142,7 +148,7 @@ def main():
     argparser.add_argument('-a', '--account', dest='specific_account', help="Select a specific account to backup")
     argparser.add_argument('-f', '--folders', dest='specific_folders', help="Backup into specific account subfolders", action='store_true')
     argparser.add_argument('-w', '--wkhtmltopdf', dest='wkhtmltopdf', help="The location of the wkhtmltopdf binary")
-    argparser.add_argument('-t', '--test', dest='test_only', help="Only a connection and folder retrival test will be performed", action='store_true')
+    argparser.add_argument('-t', '--test', dest='test_only', nargs='?', const=True, default=False, metavar='"folders"', help="Only a connection and folder retrival test will be performed, adding 'folders' as parameter will also show the found folders")
     argparser.add_argument('-c', '--config', dest='specific_config', help="Path to a config file to use")
     argparser.add_argument('-v', '--version', dest='show_version', help="Show the current version", action="store_true")
     argparser.add_argument('-s', '--search', dest='search_filter', help="Search in backuped emails (`Keyword,\"fnmatch syntax\"`)")
@@ -162,7 +168,9 @@ def main():
 
         if options['test_only']:
             try:
-                get_folder_fist(account)
+                folders = get_folders(account)
+                if options['test_only'] == 'folders':
+                    print(' - Folders:', ', '.join(folders) )
                 print(' - SUCCESS: Login and folder retrival')
             except:
                 errorHandler(None, ' - FAILED: Login and folder retrival', exitCode=None)
@@ -175,13 +183,7 @@ def main():
 
         try:
             if account['remote_folder'] == "__ALL__":
-                folders = []
-                for folder_entry in get_folder_fist(account):
-                    folders.append(folder_entry.decode().replace("/",".").split(' "." ')[1])
-                # Remove Gmail parent folder from array otherwise the script fails:
-                if '"[Gmail]"' in folders: folders.remove('"[Gmail]"')
-                # Remove Gmail "All Mail" folder which just duplicates emails:
-                if '"[Gmail].All Mail"' in folders: folders.remove('"[Gmail].All Mail"')
+                folders = get_folders(account)
             else:
                 folders = str.split(account['remote_folder'], ',')
             for folder_entry in folders:
