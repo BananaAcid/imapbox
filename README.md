@@ -236,7 +236,6 @@ It might help to navigate with a file browser into the specific backup folder, f
 ## Local install
 
 This script requires **Python 3.4+** and the following libraries:
-* [six](https://pypi.org/project/six) – a Python 2 and 3 compatibility library
 * [chardet](https://pypi.python.org/pypi/chardet) – required for character encoding detection.
 * [pdfkit](https://pypi.python.org/pypi/pdfkit) – optionally required for archiving emails to PDF.
 
