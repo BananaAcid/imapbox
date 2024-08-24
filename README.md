@@ -1,14 +1,27 @@
 ![IMAPBOX](logo.png)
 
-> [!NOTE]
-> **Why a fork?**
-> 
-> This is a modified version, to include functions that I believe are helpful as a CLI tool and a Docker service, as well as extending the readme with helpful infos.
-> I use it together with ImapSync.
-
 Dump IMAP inbox to a local folder in a regular backupable format: HTML, PDF, JSON and attachments.
 
 This program aims to save a mailbox for archive using files in indexable or searchable formats. The produced files should be readable without external software, for example, to find an email in backups using only the terminal.
+
+> [!NOTE]
+> **Why a fork?**
+> 
+> This is a modified version, to include features that I believe are helpful as a CLI tool and a Docker service, as well as extending the readme with helpful infos.
+> I use it together with ImapSync.
+>
+> Some new features:
+> - Test only mode (login credentials test), optionally output list of folders
+> - Argument to specify a specific config file
+> - Argument to show a version
+> - Account can be specified as DSN, provided in the config and in CLI
+> - Changed error handling to behave like a common CLI tool, errors are logged to error pipe
+> - Added email search option
+> - Modernized the docker files
+> - Added documentation about how to use docker, adding metadata from subfolders to elasticsearch, building binaries and more, info on how to run the python script locally
+
+
+## Backup email folder
 
 For each email in an IMAP mailbox, a folder is created with the following files:
 
