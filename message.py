@@ -45,7 +45,7 @@ quoted=r'"(?:\\[^\r\n]|[^\\"])*"'
 local="(?:"  +  dot_atom  +  "|"  +  quoted  +  ")"
 domain_lit=r"\[(?:\\\S|[\x21-\x5a\x5e-\x7e])*\]"
 domain="(?:"  +  dot_atom  +  "|"  +  domain_lit  +  ")"
-addr_spec=local  +  "\@"  +  domain
+addr_spec=local  +  r"\@"  +  domain
 
 email_address_re=re.compile('^'+addr_spec+'$')
 
@@ -230,7 +230,7 @@ class Message:
                 charset = self.getPartCharset(part)
                 self.html_content += raw_content.decode(charset, "replace")
 
-            m = re.search('<body[^>]*>(.+)<\/body>', self.html_content, re.S | re.I)
+            m = re.search(r'<body[^>]*>(.+)<\/body>', self.html_content, re.S | re.I)
             if (m != None):
                 self.html_content = m.group(1)
 
