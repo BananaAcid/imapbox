@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+
 import sys
 
 # if exitCode is None, do not exit, just show the error
