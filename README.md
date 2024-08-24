@@ -59,19 +59,29 @@ local_folder=/var/imapbox
 days=6
 wkhtmltopdf=/opt/bin/wkhtmltopdf
 specific_folders=True
+# test_only=True
 
-[account1]
-host=mail.autistici.org
+
+[accountName1]
+host=mail.domain.tld
 username=username@domain
 password=secret
 ssl=True
 
-[account2]
+[username2@gmail.com]
 host=imap.googlemail.com
-username=username@gmail.com
+username=username2@gmail.com
 password=secret
 remote_folder=INBOX
 port=993
+
+[username3@domain.tld]
+dsn=imaps://username:password@domain.tld/__ALL__
+
+[username4@domain.tld]
+username=username4@domain.tld
+password=secret
+dsn=imaps://domain.tld/__ALL__
 ```
 
 To run only a single account, the shell argument `-a` or `--account` can be used to specify which to use.
