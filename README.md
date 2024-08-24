@@ -112,7 +112,13 @@ password        | (required) The password will be saved in cleartext, for securi
 remote_folder   | (optional) IMAP folder name (multiple folder name is not supported for the moment). Default value is `INBOX`. You can use `__ALL__` to fetch all folders.
 port            | (optional) Default value is `993`.
 ssl             | (optional) Default value is `False`. Set to `True` to enable SSL
-dsn             | (optinoal) Use a specific DSN to set account paramaters. All other parameters in the account section will overwrite these. To supply a single account only (instead of the config), this can be used with the shell argument `-n <dsn>` and `--dsn <dsn>`. Example: `imaps://username:password@imap.server.tld:993/__ALL__`
+dsn             | (optinoal) Use a specific DSN to set account paramaters. All other parameters in the account section will overwrite these. The path defaults to `remote_folder`. To supply a single account only (instead of the config), this can be used with the shell argument `-n <dsn>` and `--dsn <dsn>`.
+
+#### about DSN:
+
+Example: `imaps://username:password@imap.server.tld:993/__ALL__`
+
+If the username, password or host contain any character considered special in a URI (such as : / ? # [ ] @ ! $ & ' ( ) * + , ; =), you must encode them. See [RFC 3986](https://www.ietf.org/rfc/rfc3986.txt) for the full list of reserved characters, for a simple overview see [urlencode](https://www.w3schools.com/tags/ref_urlencode.ASP). (You may use online urlencode tools to convert).
 
 ## Metadata file
 
