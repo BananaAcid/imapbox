@@ -98,8 +98,11 @@ def load_configuration(args):
             if config.has_option(section, 'password'):
                 account['password'] = config.get(section, 'password')
             elif not account['password']:
-                prompt=('Password for ' + account['username'] + ':' + account['host'] + ': ')
-                account['password'] = getpass.getpass(prompt=prompt)
+                try:
+                    prompt=('Password for ' + account['username'] + ':' + account['host'] + ': ')
+                    account['password'] = getpass.getpass(prompt=prompt)
+                except Exception as e:
+                    errorHandler(e, 'No password set for account {}. Could not ask for password. (no CLI?)'.format(section), exitCode=None)
 
             if config.has_option(section, 'ssl'):
                 if config.get(section, 'ssl').lower() == "true":
