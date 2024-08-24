@@ -1,4 +1,4 @@
-FROM python:slim-bookworm
+FROM python:3.12.5-slim-bookworm
 
 WORKDIR /opt/bin/
 
