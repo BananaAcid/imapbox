@@ -73,7 +73,7 @@ local_folder    | The full path to the folder where the emails should be stored.
 days            | Number of days back to get in the IMAP account, this should be set greater and equals to the cronjob frequency. If this parameter is not set, imapbox will get all the emails from the IMAP account. This can be overwritten with the shell argument `-d` or `--days`.
 wkhtmltopdf     | (optional) The location of the `wkhtmltopdf` binary. By default `pdfkit` will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
 specific_folders| (optional) Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
-test_only       | (optional) Only a connection and folder retrival test will be performed, adding 'folders' as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
+test_only       | (optional) Only a connection and folder retrival test will be performed, adding the optional "folders" as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
 
 ### Other sections
 
@@ -142,11 +142,11 @@ A front-end can be used to search in email archives:
 
 ### Inbuild command
 
-The `-s` and `--search` shell argument with the parameter `Keyword,"fnmatch syntax"` can be used to perform simple a simple search in the local_folder for emails. The local_folder is taken from the current configuration or `-l`/`--local-folder` shell argument.
+The `-s` and `--search` shell argument with a filter parameter with the syntax of `Keyword,"fnmatch syntax"` can be used to perform simple a simple search in the local_folder for emails. The local_folder is taken from the current configuration or `-l`/`--local-folder` shell argument.
 
 The possible keys (case sensitive) are listed in the `Metadata file` section.
 
-Example:
+Examples:
 ```bash
 imapbox --search From,"user@domain.*"  # any tld
 imapbox --search Body,"*some text*"    # in between text
