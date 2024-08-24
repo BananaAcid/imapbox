@@ -16,12 +16,12 @@ import chardet
 import gzip
 import html
 import time
-import importlib
+from importlib.util import find_spec
 
 from html.parser import HTMLParser
 
 # import pdfkit if its loader is available
-has_pdfkit = importlib.util.find_spec('pdfkit') is not None
+has_pdfkit = find_spec('pdfkit') is not None
 if has_pdfkit: import pdfkit
 
 
