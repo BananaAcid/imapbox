@@ -54,15 +54,16 @@ def load_configuration(args):
                 options['test_only'] = config.getboolean('imapbox', 'test_only')
 
     if args.specific_dsn:
-        try:
-            account = get_account(args.specific_dsn)
-            if (None == account['host'] or None == account['username'] or None == account['password']):
-                raise ValueError('host / username or password not set')
+        for dsn in args.specific_dsn:
+            try:
+                account = get_account(dsn)
+                if (None == account['host'] or None == account['username'] or None == account['password']):
+                    raise ValueError('host / username or password not set')
+                
+            except Exception as e:
+                errorHandler(e, 'Invalid DSN (' + dsn + ')')
             
-        except Exception as e:
-            errorHandler(e, 'Invalid DSN (' + args.specific_dsn + ')')
-        
-        options['accounts'].append(account)
+            options['accounts'].append(account)
 
     else:
         for section in config.sections():
@@ -151,7 +152,7 @@ def main():
     argparser = argparse.ArgumentParser(description='Dump a IMAP folder into .eml, .txt and .html files, and optionally convert them into PDFs. \n\n' + get_version('version: '), formatter_class=argparse.RawTextHelpFormatter)
     argparser.add_argument('-l', '--local-folder', dest='local_folder', metavar='PATH', help='Local folder where to create the email folders')
     argparser.add_argument('-d', '--days', dest='days', metavar='NUMBER', help='Number of days back to get in the IMAP account', type=int)
-    argparser.add_argument('-n', '--dsn', dest='specific_dsn', metavar='DSN', help='Use a specific DSN as account like imap[s]://username:password@host:port/folder,folder')
+    argparser.add_argument('-n', '--dsn', dest='specific_dsn', metavar='DSN', help='Use a specific DSN as account like imap[s]://username:password@host:port/folder,folder', action='append')
     argparser.add_argument('-a', '--account', dest='specific_account', metavar='ACCOUNT', help='Select a specific account to backup')
     argparser.add_argument('-f', '--folders', dest='specific_folders', help='Backup into specific account subfolders', action='store_true')
     argparser.add_argument('-w', '--wkhtmltopdf', dest='wkhtmltopdf', metavar='PATH', help='The location of the wkhtmltopdf binary')
