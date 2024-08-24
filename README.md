@@ -3,7 +3,7 @@
 > [!NOTE]
 > **Why a fork?**
 > 
-> This is a modified version, to include functions that I believe are helpful as CLI tool and a Docker service, as well as extending the readme with helpful infos.
+> This is a modified version, to include functions that I believe are helpful as a CLI tool and a Docker service, as well as extending the readme with helpful infos.
 > I use it together with ImapSync.
 
 Dump IMAP inbox to a local folder in a regular backupable format: HTML, PDF, JSON and attachments.
@@ -139,6 +139,26 @@ A front-end can be used to search in email archives:
 * [Facetview](https://github.com/okfn/facetview)
 
 ## Search in emails without indexation process
+
+### Inbuild command
+
+The `-s` and `--search` shell argument with the parameter `Keyword,"fnmatch syntax"` can be used to perform simple a simple search in the local_folder for emails. The local_folder is taken from the current configuration or `-l`/`--local-folder` shell argument.
+
+The possible keys (case sensitive) are listed in the `Metadata file` section.
+
+Example:
+```bash
+imapbox --search From,"user@domain.*"  # any tld
+imapbox --search Body,"*some text*"    # in between text
+imapbox --search WithText,True         # check boolean value
+
+imapbox --local-folder ./backups --search From,"user@domain.*"
+```
+
+`fnmatch` accepts shell-style wildcards, `*` as any length of characters and `?` as single character as well as `[seq]` for any of the defined characters in the group and `[!seq]` for none of the characters in the group. See: https://docs.python.org/3/library/fnmatch.html
+
+
+### Shell scripts
 
 [jq](http://stedolan.github.io/jq/) is a lightweight and flexible command-line JSON processor.
 

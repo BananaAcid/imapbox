@@ -8,6 +8,7 @@ import os
 import sys
 import getpass
 from utilities import errorHandler
+from search import do_search
 
 
 def load_configuration(args):
@@ -24,6 +25,7 @@ def load_configuration(args):
         'wkhtmltopdf': None,
         'specific_folders': False,
         'test_only': False,
+        'search_filter': None,
         'accounts': []
     }
 
@@ -119,6 +121,9 @@ def load_configuration(args):
     if (args.test_only):
         options['test_only'] = True
 
+    if (args.search_filter):
+        options['search_filter'] = args.search_filter
+
     if (args.show_version):
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'VERSION'), 'r') as version_file:
             print('v' + version_file.read())
@@ -140,9 +145,13 @@ def main():
     argparser.add_argument('-t', '--test', dest='test_only', help="Only a connection and folder retrival test will be performed", action='store_true')
     argparser.add_argument('-c', '--config', dest='specific_config', help="Path to a config file to use")
     argparser.add_argument('-v', '--version', dest='show_version', help="Show the current version", action="store_true")
+    argparser.add_argument('-s', '--search', dest='search_filter', help="Search in backuped emails (`Keyword,\"fnmatch syntax\"`)")
     args = argparser.parse_args()
     options = load_configuration(args)
     rootDir = options['local_folder']
+
+    if options['search_filter']:
+        do_search(options)
 
     if not options['accounts']:
         argparser.print_help()
