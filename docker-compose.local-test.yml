@@ -1,4 +1,3 @@
-version: '3'
 services:
 
   imapbox:
@@ -9,6 +8,13 @@ services:
     volumes:
       # change the path './backup' to your back up folder
       - ./tmp/backup/:/var/imapbox/
+
       # change the path './config.cfg' to the config
-      - ./tmp/config.cfg:/etc/imapbox/config.cfg
+      # mounting files: an absolute path is always required
+      #- ${PWD}/tmp/config.cfg:/etc/imapbox/config.cfg
+      #
+      # relative binding works fine
+      - type: bind
+        source: ./tmp/config.cfg
+        target: /etc/imapbox/config.cfg
 

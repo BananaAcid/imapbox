@@ -221,7 +221,7 @@ git clone https://github.com/bananaacid/imapbox.git ./imapbox
 
 cd imapbox 
 
-python3 -m venv ./
+python -m venv ./
 source ./bin/activate
 
 pip install --no-cache-dir -r requirements.txt
@@ -237,8 +237,7 @@ python ./imapbox/imapbox.py
 
 ## Usage with Docker compose
 
-```
-version: '3'
+```yaml
 services:
 
   imapbox:
@@ -251,14 +250,22 @@ services:
       # if you want to specify a specific folder as backup folder
       #- ./tmp/backup/:/var/imapbox/
 
-      # change the path './tmp/config.cfg' to the config
-      - ./tmp/config.cfg:/etc/imapbox/config.cfg
+      # change the path './config.cfg' to the config
+      # mounting files: an absolute path is always required
+      #- ${PWD}/tmp/config.cfg:/etc/imapbox/config.cfg
+      #
+      # relative binding works fine
+      - type: bind
+        source: ./tmp/config.cfg
+        target: /etc/imapbox/config.cfg
 
 volumes:
   imapbox_data:
 ```
 
-`docker compose run --rm imapbox`
+### Clean up, remove last generated container:
+
+`docker compose rm imapbox`
 
 ## Build an executable
 
