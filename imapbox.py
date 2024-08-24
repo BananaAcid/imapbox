@@ -7,7 +7,7 @@ from six.moves import configparser
 import os
 import sys
 import getpass
-from utilities import errorHandler, get_version
+from utilities import errorHandler, get_version, is_docker
 from search import do_search
 
 
@@ -28,6 +28,10 @@ def load_configuration(args):
         'search_filter': None,
         'accounts': []
     }
+
+    # set default folder, if within a docker container
+    if is_docker():
+        options['local_folder'] = '/var/imapbox'
 
     if (config.has_section('imapbox')):
         if config.has_option('imapbox', 'days'):

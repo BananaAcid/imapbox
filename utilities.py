@@ -4,6 +4,7 @@
 
 import os
 import sys
+from pathlib import Path
 
 # if exitCode is None, do not exit, just show the error
 def errorHandler(e, caption, exitCode=1):
@@ -24,3 +25,8 @@ def errorHandler(e, caption, exitCode=1):
 def get_version(caption = 'v'):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'VERSION'), 'r') as version_file:
         return caption + version_file.read().strip()
+
+
+def is_docker():
+    cgroup = Path('/proc/self/cgroup')
+    return Path('/.dockerenv').is_file() or cgroup.is_file() and 'docker' in cgroup.read_text()

@@ -88,15 +88,15 @@ To run only a single account, the shell argument `-a` or `--account` can be used
 
 ### The imapbox section
 
-Possibles parameters for the imapbox section:
+Possibles parameters for the imapbox section, all are optional:
 
 Parameter       | Description
 ----------------|----------------------
-local_folder    | The full path to the folder where the emails should be stored. If the local_folder is not set, imapbox will download the emails in the current folder. This can be overwritten with the shell argument `-l` or `--local-folder`.
+local_folder    | The full path to the folder where the emails should be stored. If the local_folder is not set, imapbox will default to download the emails in to the current folder (within docker, it defaults to `/var/imapbox`). This can be overwritten with the shell argument `-l` or `--local-folder`.
 days            | Number of days back to get in the IMAP account, this should be set greater and equals to the cronjob frequency. If this parameter is not set, imapbox will get all the emails from the IMAP account. This can be overwritten with the shell argument `-d` or `--days`.
-wkhtmltopdf     | (optional) The location of the `wkhtmltopdf` binary. By default `pdfkit` will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
-specific_folders| (optional) Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
-test_only       | (optional) Only a connection and folder retrival test will be performed, adding the optional "folders" as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
+wkhtmltopdf     | The location of the `wkhtmltopdf` binary. By default `pdfkit` will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
+specific_folders| Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
+test_only       | Only a connection and folder retrival test will be performed, adding the optional "folders" as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
 
 ### Other sections
 
@@ -106,9 +106,9 @@ Possibles parameters for an account section:
 
 Parameter       | Description
 ----------------|----------------------
-host            | IMAP server hostname
-username        | Login id for the IMAP server.
-password        | (optional) The password will be saved in cleartext, for security reasons, you have to run the imapbox script in userspace and set `chmod 700` on your `~/.config/mailbox/config.cfg` file. The user will prompted for a password if this parameter is missing.
+host            | (required) IMAP server hostname
+username        | (required) Login id for the IMAP server.
+password        | (required) The password will be saved in cleartext, for security reasons, you have to run the imapbox script in userspace and set `chmod 700` on your `~/.config/mailbox/config.cfg` file. The user will prompted for a password if this parameter is missing.
 remote_folder   | (optional) IMAP folder name (multiple folder name is not supported for the moment). Default value is `INBOX`. You can use `__ALL__` to fetch all folders.
 port            | (optional) Default value is `993`.
 ssl             | (optional) Default value is `False`. Set to `True` to enable SSL
@@ -262,6 +262,12 @@ services:
 volumes:
   imapbox_data:
 ```
+
+### Note
+
+The docker container defaults `local_folder` internally to `/var/imapbox` to backup emails, if run within docker. 
+
+There is no need to specify `local_folder` within the config or as shell argument.
 
 ### Clean up, remove last generated container:
 
