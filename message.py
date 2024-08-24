@@ -16,12 +16,12 @@ import chardet
 import gzip
 import html
 import time
-import pkgutil
+import importlib
 
-from six.moves import html_parser
+from html.parser import HTMLParser
 
 # import pdfkit if its loader is available
-has_pdfkit = pkgutil.find_loader('pdfkit') is not None
+has_pdfkit = importlib.util.find_spec('pdfkit') is not None
 if has_pdfkit: import pdfkit
 
 
@@ -52,7 +52,7 @@ email_address_re=re.compile('^'+addr_spec+'$')
 
 
 
-class MLStripper(html_parser.HTMLParser):
+class MLStripper(HTMLParser):
     def __init__(self):
         self.reset()
         self.fed = []

@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+
 from mailboxresource import save_emails, get_folders, get_account
 import argparse
-from six.moves import configparser
+import configparser
 import os
 import sys
 import getpass
