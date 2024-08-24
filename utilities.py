@@ -2,6 +2,7 @@
 #-*- coding:utf-8 -*-
 
 
+import os
 import sys
 
 # if exitCode is None, do not exit, just show the error
@@ -18,3 +19,8 @@ def errorHandler(e, caption, exitCode=1):
 
     if exitCode is not None:
         sys.exit(exitCode)
+
+
+def get_version(caption = 'v'):
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'VERSION'), 'r') as version_file:
+        return caption + version_file.read().strip()

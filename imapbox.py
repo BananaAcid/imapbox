@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-from mailboxresource import save_emails, get_folder_fist, get_folders, get_account
+from mailboxresource import save_emails, get_folders, get_account
 import argparse
 from six.moves import configparser
 import os
 import sys
 import getpass
-from utilities import errorHandler
+from utilities import errorHandler, get_version
 from search import do_search
 
 
@@ -131,8 +131,7 @@ def load_configuration(args):
         options['search_filter'] = args.search_filter
 
     if (args.show_version):
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'VERSION'), 'r') as version_file:
-            print('v' + version_file.read())
+        print(get_version())
         sys.exit(0)
     
     return options
@@ -141,8 +140,8 @@ def load_configuration(args):
 
 
 def main():
-    argparser = argparse.ArgumentParser(description="Dump a IMAP folder into .eml files")
-    argparser.add_argument('-l', '--local-folder', dest='local_folder', metavar='PATH', help="Local folder where to create the email folders")
+    argparser = argparse.ArgumentParser(description='Dump a IMAP folder into .eml, .txt and .html files, and optionally convert them into PDFs. \n\n' + get_version('version: '), formatter_class=argparse.RawTextHelpFormatter)
+    argparser.add_argument('-l', '--local-folder', dest='local_folder', metavar='PATH', help='Local folder where to create the email folders')
     argparser.add_argument('-d', '--days', dest='days', metavar='NUMBER', help='Number of days back to get in the IMAP account', type=int)
     argparser.add_argument('-n', '--dsn', dest='specific_dsn', metavar='DSN', help='Use a specific DSN as account like imap[s]://username:password@host:port/folder,folder')
     argparser.add_argument('-a', '--account', dest='specific_account', metavar='ACCOUNT', help='Select a specific account to backup')
