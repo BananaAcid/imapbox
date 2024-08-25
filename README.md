@@ -174,7 +174,7 @@ done
 A front-end can be used to search in email archives:
 
 * [Calaca](https://github.com/polo2ro/Calaca) is a beautiful, easy to use, search UI for Elasticsearch.
-* [Facetview](https://github.com/okfn/facetview)
+* [Facetview2](https://github.com/CottageLabs/facetview2)
 
 ## Search in emails without indexation process
 
