@@ -46,6 +46,10 @@ copies of the same message spread knew several account will be archived once usi
 * Archiving an IMAP account because of mailbox size restrictions, or to restrain the used disk space on the IMAP server.
 * Archiving emails to PDF format.
 
+## Usage without config file
+
+See: [about DSN: Usage example](#about-dsn)
+
 ## Config file
 
 Use `./config.cfg` `~/.config/imapbox/config.cfg` or `/etc/imapbox/config.cfg`
@@ -120,6 +124,8 @@ DSN Example: `imaps://username:password@imap.server.tld:993/__ALL__`
 
 Usage example:
 `imapbox -l ./test -f --dsn imaps://username:password@imap.server.tld/INBOX,Sent --dsn imaps://username:password@imap.server2.tld/__ALL__`
+
+The DSN shell arguments can be used with a config file, but will ignore all configured account and only honor the imapbox section.
 
 If the username, password or host contain any character considered special in a URI (such as : / ? # [ ] @ ! $ & ' ( ) * + , ; =), you must encode them. See [RFC 3986](https://www.ietf.org/rfc/rfc3986.txt) for the full list of reserved characters, for a simple overview see [urlencode](https://www.w3schools.com/tags/ref_urlencode.ASP). (You may use online urlencode tools to convert).
 
