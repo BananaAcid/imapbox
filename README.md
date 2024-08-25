@@ -14,7 +14,7 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - Test only mode (login credentials test), optionally output list of folders
 > - Argument to specify a specific config file
 > - Argument to show a version
-> - Account can be specified as DSN, provided in the config and in CLI
+> - Accounts can be specified as DSN, provided in the config and multiple times in CLI
 > - Changed error handling to behave like a common CLI tool, errors are logged to error pipe
 > - Added email search option
 > - Modernized the docker files
