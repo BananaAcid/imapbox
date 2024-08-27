@@ -20,6 +20,14 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - Modernized the docker files
 > - Added documentation about how to use docker, adding metadata from subfolders to elasticsearch, building binaries and more, info on how to run the python script locally
 
+## Quick use, using the released binary
+
+```bash
+imapbox -l ./backup --dsn imaps://username:password@imap.server.tld/__ALL__
+```
+See more below
+- [about shell arguments](#the-imapbox-section)
+- [DSN argument](#about-dsn)
 
 ## Backup email folder
 
