@@ -256,13 +256,19 @@ This script requires **Python 3.4+** and the following libraries:
 
 ### Installation
 
+
+
 ```bash
 git clone https://github.com/bananaacid/imapbox.git ./imapbox
 
 cd imapbox 
 
 python -m venv ./
+
+# mac/bash/wsl
 source ./bin/activate
+# ps1
+.\Scripts\Activate.ps1
 
 pip install --no-cache-dir -r requirements.txt
 
@@ -315,11 +321,31 @@ There is no need to specify `local_folder` within the config or as shell argumen
 
 ## Build an executable
 
+### Linux/WSL (bash)
+
 Within the same Py-Env, do:
 ```bash
 pip install --no-cache-dir  pyinstaller
 
 pyinstaller --add-data "VERSION:." --onefile ./imapbox.py  
+```
+
+### MacOS (zsh)
+
+Within the same Py-Env, do:
+```bash
+pip install --no-cache-dir  pyinstaller
+
+pyinstaller --add-data "VERSION:." --onefile ./imapbox.py  --icon .\resources\logo.icns
+```
+
+### Windows (Powershell)
+
+Within the same Py-Env, do:
+```powershell
+pip install --no-cache-dir  pyinstaller
+
+pyinstaller --add-data "VERSION:." --onefile .\imapbox.py  --icon .\resources\logo.ico
 ```
 
 The resulting executable will be generated into the ./dist folder.
