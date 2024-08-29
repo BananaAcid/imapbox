@@ -6,7 +6,9 @@ import os
 import sys
 from pathlib import Path
 
-# if exitCode is None, do not exit, just show the error
+# e: if e is None, show no error details
+# caption: must always exist (is used from code to show a readable message)
+# exitCode: if exitCode is None, do not exit, just show the error
 def errorHandler(e, caption, exitCode=1):
     if hasattr(e, 'strerror'):
         msg = e.strerror
