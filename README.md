@@ -148,10 +148,12 @@ imapbox -l ./test -f --dsn imaps://username:password@imap.server.tld/INBOX,Sent 
 
 The DSN shell arguments can be used with a config file, but will ignore all configured account and only honor the imapbox section.
 
-You may create a DSN with the commandline helper like:
+You may generate a DSN with the commandline helper like:
 ```bash
 imapbox --input-dsn
 ```
+
+It will ask the following before generating the DSN and showing it to the shell:
 ```
 Use SSL? [Y/n]:
 Host:
