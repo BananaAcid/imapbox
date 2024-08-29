@@ -103,7 +103,8 @@ To run only a single account, the shell argument `-a` or `--account` can be used
 
 Argument                      | Description
 ------------------------------|-----------------------
--a ACCOUNT, --account ACCOUNT | Select a specific account to backup
+-h, --help                    | Show the help for all available shell arguments
+-a ACCOUNT, --account ACCOUNT | Select a specific account section from the config to backup
 -v, --version                 | Show the current version
 -s FILTER, --search FILTER    | Search in backuped emails (Filter: `Keyword,"fnmatch syntax"`) <br> see [Search in emails without indexation process > Inbuild command](#inbuild-command)
 -i, --input-dsn               | Helper to create a DSN string <br> see [about DSN](#about-dsn)
