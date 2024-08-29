@@ -316,6 +316,8 @@ python ./imapbox/imapbox.py
 
 ## Usage with Docker compose
 
+Docker image: [bananaacid/imapbox](https://hub.docker.com/r/bananaacid/imapbox)
+
 ```yaml
 services:
 
