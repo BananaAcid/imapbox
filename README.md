@@ -98,6 +98,14 @@ dsn=imaps://domain.tld/__ALL__
 
 To run only a single account, the shell argument `-a` or `--account` can be used to specify which to use.
 
+### Shell arguments not realted to the config sections
+
+Argument                      | Description
+------------------------------|-----------------------
+-a ACCOUNT, --account ACCOUNT | Select a specific account to backup
+-v, --version                 | Show the current version
+-s FILTER, --search FILTER    | Search in backuped emails (Filter: `Keyword,"fnmatch syntax"`) <br> see [Search in emails without indexation process > Inbuild command](#inbuild-command)
+
 ### The imapbox section
 
 Possibles parameters for the imapbox section, all are optional:
