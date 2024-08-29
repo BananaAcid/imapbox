@@ -15,6 +15,7 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - Argument to specify a specific config file
 > - Argument to show a version
 > - Accounts can be specified as DSN, provided in the config and multiple times in CLI
+> - A commandline helper to create a DSN 
 > - Changed error handling to behave like a common CLI tool, errors are logged to error pipe
 > - Added email search option
 > - Modernized the docker files
@@ -105,6 +106,7 @@ Argument                      | Description
 -a ACCOUNT, --account ACCOUNT | Select a specific account to backup
 -v, --version                 | Show the current version
 -s FILTER, --search FILTER    | Search in backuped emails (Filter: `Keyword,"fnmatch syntax"`) <br> see [Search in emails without indexation process > Inbuild command](#inbuild-command)
+-i, --input-dsn               | Helper to create a DSN string
 
 ### The imapbox section
 
@@ -139,9 +141,24 @@ dsn             | (optinoal) Use a specific DSN to set account paramaters. All o
 DSN Example: `imaps://username:password@imap.server.tld:993/__ALL__`
 
 Usage example:
-`imapbox -l ./test -f --dsn imaps://username:password@imap.server.tld/INBOX,Sent --dsn imaps://username:password@imap.server2.tld/__ALL__`
+```bash
+imapbox -l ./test -f --dsn imaps://username:password@imap.server.tld/INBOX,Sent --dsn imaps://username:password@imap.server2.tld/__ALL__
+```
 
 The DSN shell arguments can be used with a config file, but will ignore all configured account and only honor the imapbox section.
+
+You may create a DSN with the commandline helper like:
+```bash
+imapbox --input-dsn
+```
+```
+Use SSL? [Y/n]:
+Host:
+Port [993]:
+Username:
+Password:
+Remote folder (use __ALL__ to fetch all) [INBOX]:
+```
 
 If the username, password or host contain any character considered special in a URI (such as : / ? # [ ] @ ! $ & ' ( ) * + , ; =), you must encode them. See [RFC 3986](https://www.ietf.org/rfc/rfc3986.txt) for the full list of reserved characters, for a simple overview see [urlencode](https://www.w3schools.com/tags/ref_urlencode.ASP). (You may use online urlencode tools to convert).
 

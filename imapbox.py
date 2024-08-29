@@ -2,7 +2,8 @@
 #-*- coding:utf-8 -*-
 
 
-from mailboxresource import save_emails, get_folders, get_account
+from mailboxresource import save_emails, get_folders
+from dsn import get_account, input_dsn
 import argparse
 import configparser
 import os
@@ -27,6 +28,7 @@ def load_configuration(args):
         'specific_folders': False,
         'test_only': False,
         'search_filter': None,
+        'input_dsn': False,
         'accounts': []
     }
 
@@ -139,6 +141,9 @@ def load_configuration(args):
     if (args.search_filter):
         options['search_filter'] = args.search_filter
 
+    if (args.input_dsn):
+        options['input_dsn'] = args.input_dsn
+
     if (args.show_version):
         print(get_version())
         sys.exit(0)
@@ -160,12 +165,16 @@ def main():
     argparser.add_argument('-c', '--config', dest='specific_config', metavar='PATH', help='Path to a config file to use')
     argparser.add_argument('-v', '--version', dest='show_version', help='Show the current version', action='store_true')
     argparser.add_argument('-s', '--search', dest='search_filter', metavar='FILTER', help='Search in backuped emails (Filter: `Keyword,\"fnmatch syntax\"`)')
+    argparser.add_argument('-i', '--input-dsn', dest='input_dsn', help='Helper to create a DSN string', action='store_true')
     args = argparser.parse_args()
     options = load_configuration(args)
     rootDir = options['local_folder']
 
     if options['search_filter']:
         do_search(options)
+
+    if options['input_dsn']:
+        input_dsn(options)
 
     if not options['accounts']:
         argparser.print_help()
