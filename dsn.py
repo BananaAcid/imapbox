@@ -2,7 +2,6 @@
 #-*- coding:utf-8 -*-
 
 
-import sys
 import urllib
 from utilities import errorHandler
 
@@ -33,6 +32,24 @@ from utilities import errorHandler
 # setting other parameters
 #  imap://username:password@imap.gmail.com:993/?name=Account1
 def get_account(dsn, name=None):
+    """
+    Parse a DSN string and return a dictionary of account parameters.
+
+    The DSN string should be in the form of:
+    "imap[s]://username:password@server.tld:993/INBOX.Drafts,INBOX.Sent?remote_folder=INBOX.Drafts,More.Folders?ssl=true&name=Account1"
+
+    The function will return a dictionary with the following keys:
+
+    - name: The name of the account
+    - host: The hostname of the IMAP server
+    - port: The port number of the IMAP server
+    - username: The username to login with
+    - password: The password to login with
+    - remote_folder: A string containing a comma separated list of folders to archive
+    - ssl: A boolean indicating whether to use SSL or not
+
+    The function will also set the name, either by the name parameter provided or generate one of the username and host.
+    """
     account = {
         'name': 'account',
         'host': None,
@@ -61,6 +78,7 @@ def get_account(dsn, name=None):
         account['password'] = urllib.parse.unquote(parsed_url.password)
     
     # prefill account name, if none was provided (by config.cfg) in case of calling it from commandline. can be overwritten by the query param 'name'
+    account['name'] = create_account_name(account, name)
     if name:
         account['name'] = name
         
@@ -96,7 +114,34 @@ def get_account(dsn, name=None):
     return account
 
 
+def create_account_name(account, name = None):
+    """
+    If name is given, return it, otherwise return a name made up
+    of the username and host parts of the account.
+    """
+    
+    if name:
+        return name
+        
+    else:
+        name = ''
+
+        if (account['username']):
+            name = account['username']
+            
+        if (account['host']):
+            name += '@' + account['host']
+
+        return name
+
+
+
 def input_dsn(options):
+    """
+    Asks the user to input the account details and print the full DSN.
+    If test_only is True, it will test the connection and optionally print the found folders.
+    """
+
     try:
         account = {
             'ssl': input('Use SSL? [Y/n]: ').lower() != 'n',
@@ -108,10 +153,12 @@ def input_dsn(options):
 
             'remote_folder': input('Remote folder (use __ALL__ to fetch all) [INBOX]: ').strip() or 'INBOX',
         }
-        
-        print('\nDSN:\n imap{}://{}:{}@{}:{}/{}'.format('s' if account['ssl'] else '', urllib.parse.quote(account['username']), urllib.parse.quote(account['password']), account['host'], account['port'], urllib.parse.quote(account['remote_folder'])))
+        account['name'] = create_account_name(account)
+        options['accounts'] = [account]
+
+        print('\nDSN:\n imap{}://{}:{}@{}:{}/{}\n'.format('s' if account['ssl'] else '', urllib.parse.quote(account['username']), urllib.parse.quote(account['password']), account['host'], account['port'], urllib.parse.quote(account['remote_folder'])))
 
     except Exception as e:
         errorHandler(e, 'Input DSN Error')
 
-    sys.exit(0)
+    return options

@@ -107,7 +107,7 @@ Argument                      | Description
 -a ACCOUNT, --account ACCOUNT | Select a specific account section from the config to backup
 -v, --version                 | Show the current version
 -s FILTER, --search FILTER    | Search in backuped emails (Filter: `Keyword,"fnmatch syntax"`) <br> see [Search in emails without indexation process > Inbuild command](#inbuild-command)
--i, --input-dsn               | Helper to create a DSN string <br> see [about DSN](#about-dsn)
+-i, --input-dsn               | Helper to generate a DSN string, can be used with --test <br> see [about DSN](#about-dsn)
 
 ### The imapbox section
 

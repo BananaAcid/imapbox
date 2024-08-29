@@ -165,7 +165,7 @@ def main():
     argparser.add_argument('-c', '--config', dest='specific_config', metavar='PATH', help='Path to a config file to use')
     argparser.add_argument('-v', '--version', dest='show_version', help='Show the current version', action='store_true')
     argparser.add_argument('-s', '--search', dest='search_filter', metavar='FILTER', help='Search in backuped emails (Filter: `Keyword,\"fnmatch syntax\"`)')
-    argparser.add_argument('-i', '--input-dsn', dest='input_dsn', help='Helper to create a DSN string', action='store_true')
+    argparser.add_argument('-i', '--input-dsn', dest='input_dsn', help='Helper to generate a DSN string, can be used with --test', action='store_true')
     args = argparser.parse_args()
     options = load_configuration(args)
     rootDir = options['local_folder']
@@ -174,7 +174,10 @@ def main():
         do_search(options)
 
     if options['input_dsn']:
-        input_dsn(options)
+        options = input_dsn(options)
+        if not options['test_only']:
+            sys.exit(0)
+
 
     if not options['accounts']:
         argparser.print_help()
