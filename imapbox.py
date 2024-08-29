@@ -158,7 +158,7 @@ def main():
     argparser.add_argument('-l', '--local-folder', dest='local_folder', metavar='PATH', help='Local folder where to create the email folders')
     argparser.add_argument('-d', '--days', dest='days', metavar='NUMBER', help='Number of days back to get in the IMAP account', type=int)
     argparser.add_argument('-n', '--dsn', dest='specific_dsn', metavar='DSN', help='Use a specific DSN as account like imap[s]://username:password@host:port/folder,folder', action='append')
-    argparser.add_argument('-a', '--account', dest='specific_account', metavar='ACCOUNT', help='Select a specific account to backup')
+    argparser.add_argument('-a', '--account', dest='specific_account', metavar='ACCOUNT', help='Select a specific account section from the config to backup')
     argparser.add_argument('-f', '--folders', dest='specific_folders', help='Backup into specific account subfolders', action='store_true')
     argparser.add_argument('-w', '--wkhtmltopdf', dest='wkhtmltopdf', metavar='PATH', help='The location of the wkhtmltopdf binary')
     argparser.add_argument('-t', '--test', dest='test_only', nargs='?', const=True, default=False, metavar='"folders"', help='Only a connection and folder retrival test will be performed, adding the optional "folders" as parameter will also show the found folders')
