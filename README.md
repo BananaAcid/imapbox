@@ -104,10 +104,16 @@ To run only a single account, the shell argument `-a` or `--account` can be used
 Argument                      | Description
 ------------------------------|-----------------------
 -h, --help                    | Show the help for all available shell arguments
+-c PATH, --config PATH        | Path to a config file to use <br> see [Config file](#config-file)
 -a ACCOUNT, --account ACCOUNT | Select a specific account section from the config to backup
 -v, --version                 | Show the current version
 -s FILTER, --search FILTER    | Search in backuped emails (Filter: `Keyword,"fnmatch syntax"`) <br> see [Search in emails without indexation process > Inbuild command](#inbuild-command)
--i, --input-dsn               | Helper to generate a DSN string, can be used with --test <br> see [about DSN](#about-dsn)
+-i, --input-dsn               | Helper to generate a DSN string, adding the optional "gui" parameter will open the DSN generator in a GUI, can be used with --test <br> see [about DSN](#about-dsn)
+
+#### Note
+
+`imap --input-dsn gui` has an option to execute the backup, but the log will only be visible if started from the commandline.
+This is a not yet very practical for users with no shell experience, this makes the GUI part incomplete and should be concidered experimental.
 
 ### The imapbox section
 
@@ -155,9 +161,9 @@ imapbox --input-dsn
 
 It will ask the following before generating the DSN and showing it to the shell:
 ```
-Use SSL? [Y/n]:
 Host:
 Port [993]:
+Use SSL? [Y/n]:
 Username:
 Password:
 Remote folder (use __ALL__ to fetch all) [INBOX]:

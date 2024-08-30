@@ -136,6 +136,13 @@ def create_account_name(account, name = None):
 
 
 
+def account_to_dsn(account):
+    """
+    Generate a DSN string from an account
+    """
+
+    return 'imap{}://{}:{}@{}:{}/{}'.format('s' if account['ssl'] else '', urllib.parse.quote(account['username']), urllib.parse.quote(account['password']), account['host'], account['port'], urllib.parse.quote(account['remote_folder']))
+
 def input_dsn(options):
     """
     Asks the user to input the account details and print the full DSN.
@@ -144,10 +151,9 @@ def input_dsn(options):
 
     try:
         account = {
-            'ssl': input('Use SSL? [Y/n]: ').lower() != 'n',
-
             'host': input('Host: ').strip(),
             'port': int(input('Port [993]: ').strip() or '993'),
+            'ssl': input('Use SSL? [Y/n]: ').lower() != 'n',
             'username': input('Username: ').strip(),
             'password': input('Password: ').strip(),
 
@@ -156,7 +162,7 @@ def input_dsn(options):
         account['name'] = create_account_name(account)
         options['accounts'] = [account]
 
-        print('\nDSN:\n imap{}://{}:{}@{}:{}/{}\n'.format('s' if account['ssl'] else '', urllib.parse.quote(account['username']), urllib.parse.quote(account['password']), account['host'], account['port'], urllib.parse.quote(account['remote_folder'])))
+        print('\nDSN:\n {}'.format(account_to_dsn(account)))
 
     except Exception as e:
         errorHandler(e, 'Input DSN Error')

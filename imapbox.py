@@ -11,6 +11,7 @@ import sys
 import getpass
 from utilities import errorHandler, get_version, is_docker
 from search import do_search
+from gui import open_gui
 
 
 def load_configuration(args):
@@ -165,7 +166,7 @@ def main():
     argparser.add_argument('-c', '--config', dest='specific_config', metavar='PATH', help='Path to a config file to use')
     argparser.add_argument('-v', '--version', dest='show_version', help='Show the current version', action='store_true')
     argparser.add_argument('-s', '--search', dest='search_filter', metavar='FILTER', help='Search in backuped emails (Filter: `Keyword,\"fnmatch syntax\"`)')
-    argparser.add_argument('-i', '--input-dsn', dest='input_dsn', help='Helper to generate a DSN string, can be used with --test', action='store_true')
+    argparser.add_argument('-i', '--input-dsn', dest='input_dsn', nargs='?', const=True, default=False, metavar='"gui"', help='Helper to generate a DSN string, adding the optional "gui" parameter will open the DSN generator in a GUI, can be used with --test')
     args = argparser.parse_args()
     options = load_configuration(args)
     rootDir = options['local_folder']
@@ -174,9 +175,12 @@ def main():
         do_search(options)
 
     if options['input_dsn']:
-        options = input_dsn(options)
-        if not options['test_only']:
-            sys.exit(0)
+        if options['input_dsn'] == 'gui':
+            open_gui(options)
+        else:
+            options = input_dsn(options)
+            if not options['test_only']:
+                sys.exit(0)
 
 
     if not options['accounts']:
