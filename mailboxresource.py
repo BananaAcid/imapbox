@@ -24,6 +24,7 @@ class MailboxClient:
         self.password = password
         self.remote_folder = remote_folder
         self.ssl = ssl
+        self.selected_folder = False
 
         self.connect_to_imap()
 
@@ -31,8 +32,8 @@ class MailboxClient:
         retries = 0
         while retries < MAX_RETRIES:
             try:
-                if not self.ssl:  # Gespeicherten Wert verwenden
-                    self.mailbox = imaplib.IMAP4(self.host, self.port)  # Gespeicherte Werte verwenden
+                if not self.ssl:
+                    self.mailbox = imaplib.IMAP4(self.host, self.port)
                 else:
                     self.mailbox = imaplib.IMAP4_SSL(self.host, self.port)
                 self.mailbox.login(self.username, self.password)
@@ -44,7 +45,12 @@ class MailboxClient:
                     typ, data = self.mailbox.select(adjust_remote_folder, readonly=True)
                     if typ != 'OK':
                         print("MailboxClient: Could not select remote folder '%s'" % self.remote_folder)
-                break  # Erfolgreiche Verbindung und Ordnerauswahl
+                        self.selected_folder = False
+                    else:
+                        self.selected_folder = True   
+                else:
+                    self.selected_folder = True
+                break
             except ConnectionResetError as e:
                 print(f"Connection error: {e}. Will retry...")
                 retries += 1
@@ -189,12 +195,13 @@ class MailboxClient:
 
 def save_emails(account, options):
     mailbox = MailboxClient(account['host'], account['port'], account['username'], account['password'], account['remote_folder'], account['ssl'])
-    stats = mailbox.copy_emails(options['days'], options['local_folder'], options['wkhtmltopdf'])
-    mailbox.cleanup()
-    if stats[0] == 0 and stats[1] == 0:
-        print('Folder {} is empty'.format(account['remote_folder']))
-    else:
-        print('{} emails created, {} emails already exists'.format(stats[0], stats[1]))
+    if mailbox.selected_folder is True:
+        stats = mailbox.copy_emails(options['days'], options['local_folder'], options['wkhtmltopdf'])
+        mailbox.cleanup()
+        if stats[0] == 0 and stats[1] == 0:
+            print('Folder {} is empty'.format(account['remote_folder']))
+        else:
+            print('{} emails created, {} emails already exists'.format(stats[0], stats[1]))
 
 
 def get_folder_fist(account):
