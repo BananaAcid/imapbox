@@ -26,6 +26,7 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - Reconnecting to mail boxes
 > - Defining folders to exclude
 > - Errors are real errors and can be piped to an error file
+> - Huge folders support, icloud emails support
 > - Server mode (execute, defined by cron compatible config string)
 
 ## Quick use, using the released binary
