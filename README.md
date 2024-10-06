@@ -74,6 +74,8 @@ days=6
 wkhtmltopdf=/opt/bin/wkhtmltopdf
 specific_folders=True
 # test_only=True
+## cron -> At minute 0 past every 4th hour -> see https://crontab.guru/#0_*/4_*_*_*
+# server=0 */4 * * *
 
 
 [accountName1]
