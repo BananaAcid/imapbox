@@ -146,7 +146,7 @@ password        | (required) The password will be saved in cleartext, for securi
 remote_folder   | (optional) IMAP folder name (multiple folder name is not supported for the moment). Default value is `INBOX`. You can use `__ALL__` to fetch all folders.
 port            | (optional) Default value is `993`.
 ssl             | (optional) Default value is `False`. Set to `True` to enable SSL
-dsn             | (optinoal) Use a specific DSN to set account paramaters. All other parameters in the account section will overwrite these. The path defaults to `remote_folder`. To supply a single account only (instead of the config), this can be used multiple times with the shell argument `-n <dsn>` and `--dsn <dsn>`.
+dsn             | (optinoal) Use a specific DSN to set account paramaters. All other parameters in the account section will overwrite these. The path defaults to `remote_folder`. To supply a single account only or multiple, this can be used multiple times with the shell argument `-n <dsn>` and `--dsn <dsn>` and ignoring all config accounts.
 
 #### about DSN:
 
@@ -223,6 +223,14 @@ A front-end can be used to search in email archives:
 * [Calaca](https://github.com/polo2ro/Calaca) is a beautiful, easy to use, search UI for Elasticsearch.
 * [Facetview2](https://github.com/CottageLabs/facetview2)
 
+### CouchDB
+
+The same applies for adding to CouchDB (the `imapbox` db must exist), just replace the curl line:
+
+```bash
+curl curl -XPUT "localhost:5984/imapbox/${ID}" --data-binary "@${METADATAPATH}"
+```
+
 ## Search in emails without indexation process
 
 ### Inbuild command
@@ -237,13 +245,19 @@ imapbox --search From,"user@domain.*"  # any tld
 imapbox --search Body,"*some text*"    # in between text
 imapbox --search WithText,True         # check boolean value
 
+# use a specific local folder
 imapbox --local-folder ./backups --search From,"user@domain.*"
+
+# save results to a text file to be viewed easier
+imapbox --search From,"user@domain.*" > result.txt
 ```
 
 `fnmatch` accepts shell-style wildcards, `*` as any length of characters and `?` as single character as well as `[seq]` for any of the defined characters in the group and `[!seq]` for none of the characters in the group. See: https://docs.python.org/3/library/fnmatch.html
 
 
 ### Shell scripts
+
+If you need to do more complex searches or handle the results in scripts, you can resort to using shell scripts to handle the [Metadata Files](#metadata-file).
 
 [jq](http://stedolan.github.io/jq/) is a lightweight and flexible command-line JSON processor.
 
