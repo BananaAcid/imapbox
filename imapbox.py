@@ -12,6 +12,7 @@ import getpass
 from utilities import errorHandler, get_version, is_docker
 from search import do_search
 from gui import open_gui
+from server import start_server
 
 
 def load_configuration(args):
@@ -30,6 +31,7 @@ def load_configuration(args):
         'test_only': False,
         'search_filter': None,
         'input_dsn': False,
+        'server': None,
         'accounts': []
     }
 
@@ -55,6 +57,9 @@ def load_configuration(args):
                 options['test_only'] = 'folders'
             else:
                 options['test_only'] = config.getboolean('imapbox', 'test_only')
+
+        if config.has_option('imapbox', 'server'):
+            options['server'] = config.getboolean('imapbox', 'server')
 
     if args.specific_dsn:
         for dsn in args.specific_dsn:
@@ -145,6 +150,9 @@ def load_configuration(args):
     if (args.input_dsn):
         options['input_dsn'] = args.input_dsn
 
+    if (args.server):
+        options['server'] = args.server
+
     if (args.show_version):
         print(get_version())
         sys.exit(0)
@@ -167,9 +175,9 @@ def main():
     argparser.add_argument('-v', '--version', dest='show_version', help='Show the current version', action='store_true')
     argparser.add_argument('-s', '--search', dest='search_filter', metavar='FILTER', help='Search in backuped emails (Filter: `Keyword,\"fnmatch syntax\"`)')
     argparser.add_argument('-i', '--input-dsn', dest='input_dsn', nargs='?', const=True, default=False, metavar='"gui"', help='Helper to generate a DSN string, adding the optional "gui" parameter will open the DSN generator in a GUI, can be used with --test')
+    argparser.add_argument('--server', dest='server', metavar='"CRONTABSTRING"', help='Starts as a server, triggering with the specified cron string')
     args = argparser.parse_args()
     options = load_configuration(args)
-    rootDir = options['local_folder']
 
     if options['search_filter']:
         do_search(options)
@@ -185,6 +193,17 @@ def main():
 
     if not options['accounts']:
         argparser.print_help()
+        sys.exit(1)
+
+    if options['server']:
+        start_server(options, do_accounts)
+        sys.exit(0)
+
+    do_accounts(options)
+
+
+def do_accounts(options):
+    rootDir = options['local_folder']
 
     for account in options['accounts']:
 

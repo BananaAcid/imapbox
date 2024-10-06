@@ -20,6 +20,7 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - Added email search option
 > - Modernized the docker files
 > - Added documentation about how to use docker, adding metadata from subfolders to elasticsearch, building binaries and more, info on how to run the python script locally
+> - Server mode (execute, defined by cron compatible config string)
 
 ## Quick use, using the released binary
 
@@ -109,6 +110,7 @@ Argument                      | Description
 -v, --version                 | Show the current version
 -s FILTER, --search FILTER    | Search in backuped emails (Filter: `Keyword,"fnmatch syntax"`) <br> see [Search in emails without indexation process > Inbuild command](#inbuild-command)
 -i, --input-dsn               | Helper to generate a DSN string, adding the optional "gui" parameter will open the DSN generator in a GUI, can be used with --test <br> see [about DSN](#about-dsn)
+--server CRONTABSTRING        | Starts as a server, triggering with the specified cron string, see https://crontab.guru
 
 #### Note
 
@@ -126,6 +128,7 @@ days            | Number of days back to get in the IMAP account, this should be
 wkhtmltopdf     | The location of the `wkhtmltopdf` binary. By default `pdfkit` will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
 specific_folders| Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
 test_only       | Only a connection and folder retrival test will be performed, adding the optional "folders" as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
+server          | Starts as a server, triggering with the specified cron string, see https://crontab.guru . This can be overwritten with the shell argument `--server` 
 
 ### Other sections
 
@@ -358,6 +361,8 @@ volumes:
 The docker container defaults `local_folder` internally to `/var/imapbox` to backup emails, if run within docker. 
 
 There is no need to specify `local_folder` within the config or as shell argument.
+
+The docker container will exit after execution, unless `server` is specified.
 
 ### Clean up, remove last generated container:
 
