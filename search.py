@@ -49,4 +49,4 @@ def do_search(options):
                                 count += 1
                                 break
     
-    errorHandler(count, 'Done', 0)
+    errorHandler(count, '\nFound', 0)
