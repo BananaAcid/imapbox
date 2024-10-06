@@ -11,7 +11,6 @@ import sys
 import getpass
 from utilities import errorHandler, get_version, is_docker
 from search import do_search
-from gui import open_gui
 from server import start_server
 
 
@@ -194,6 +193,7 @@ def main():
 
     if options['input_dsn']:
         if options['input_dsn'] == 'gui':
+            from gui import open_gui # placed here, because it might not be needed on load, so loading speeds up
             open_gui(options)
         else:
             options = input_dsn(options)
