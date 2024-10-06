@@ -167,7 +167,7 @@ def load_configuration(args):
 
 
 def main():
-    argparser = argparse.ArgumentParser(description='Dump a IMAP folder into .eml, .txt and .html files, and optionally convert them into PDFs. \n\n' + get_version('version: '), formatter_class=argparse.RawTextHelpFormatter)
+    argparser = argparse.ArgumentParser(description='Dump a IMAP folder into .eml, .txt and .html files, and optionally convert them into PDFs.\nBananaAcid Edition\n\n' + get_version('version: '), formatter_class=argparse.RawTextHelpFormatter)
     argparser.add_argument('-l', '--local-folder', dest='local_folder', metavar='PATH', help='Local folder where to create the email folders')
     argparser.add_argument('-d', '--days', dest='days', metavar='NUMBER', help='Number of days back to get in the IMAP account', type=int)
     argparser.add_argument('-n', '--dsn', dest='specific_dsn', metavar='DSN', help='Use a specific DSN as account like imap[s]://username:password@host:port/folder,folder', action='append')

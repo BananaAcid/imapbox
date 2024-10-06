@@ -1,4 +1,5 @@
 ![IMAPBOX](logo.png)
+## BananaAcid Edition
 
 Dump IMAP inbox to a local folder in a regular backupable format: EML, TXT, HTML, PDF, JSON and attachments.
 
@@ -9,6 +10,8 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > 
 > This is a modified version, to include features that I believe are helpful as a CLI tool and a Docker service, as well as extending the readme with helpful infos.
 > I use it together with ImapSync.
+>
+> - **Compatibility to the polo2ro's version is preserved**
 >
 > Some new features:
 > - Test only mode (login credentials test), optionally output list of folders
