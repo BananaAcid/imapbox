@@ -21,6 +21,8 @@ from importlib.util import find_spec
 
 from html.parser import HTMLParser
 
+from utilities import errorHandler
+
 # import pdfkit if its loader is available
 has_pdfkit = find_spec('pdfkit') is not None
 if has_pdfkit: import pdfkit
@@ -194,17 +196,12 @@ class Message:
 
     def getPartCharset(self, part):
         if part.get_content_charset() is None:
-            # Python 2 chardet expects a string,
-            # Python 3 chardet expects a bytearray.
-            if sys.version_info[0] < 3:
-                return chardet.detect(part.as_string())['encoding']
-            else:
-                try:
-                    return chardet.detect(part.as_bytes())['encoding']
-                except UnicodeEncodeError:
-                        string = part.as_string()
-                        array = bytearray(string, 'utf-8')
-                        return chardet.detect(array)['encoding']
+            try:
+                return chardet.detect(part.as_bytes())['encoding']
+            except UnicodeEncodeError:
+                    string = part.as_string()
+                    array = bytearray(string, 'utf-8')
+                    return chardet.detect(array)['encoding']
         return part.get_content_charset()
 
 
@@ -354,8 +351,9 @@ class Message:
             try:
                 pdfkit.from_file(html_path, pdf_path, configuration=config)
             except TimeoutError:
-                print("Timeout while creating PDF. wkhtmltopdf was terminated.")
+                errorHandler(None, 'Timeout while creating PDF. wkhtmltopdf was terminated', exitCode=None)
             finally:
                 signal.alarm(0)
         else:
-            print("Couldn't create PDF message, since \"pdfkit\" module isn't installed.")
+            errorHandler(None, 'Couldn\'t create PDF message, since "pdfkit" module isn\'t installed.', exitCode=None)
+
