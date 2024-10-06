@@ -7,6 +7,7 @@ import imaplib, email
 import re
 import os
 import hashlib
+import sys
 from message import Message
 import datetime
 from utilities import errorHandler
@@ -104,7 +105,10 @@ class MailboxClient:
                 while fetch_retries < MAX_RETRIES:
                     try:
                         typ, data = self.mailbox.fetch(num, '(BODY.PEEK[])')
-                        print('\r{0:.2f}%'.format(idx*100/total), end='')
+
+                        if sys.stdin and sys.stdin.isatty():
+                            print('\r{0:.2f}%'.format(idx*100/total), end='')
+
                         if self.saveEmail(data):
                             n_saved += 1
                         else:
