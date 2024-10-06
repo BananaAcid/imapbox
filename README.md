@@ -17,7 +17,7 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - Accounts can be specified as DSN, provided in the config and multiple times in CLI
 > - A commandline helper to create a DSN 
 > - Changed error handling to behave like a common CLI tool, errors are logged to error pipe
-> - Added email search option
+> - Added inbuild email search option with optional json output
 > - Modernized the docker files
 > - Added documentation about how to use docker, adding metadata from subfolders to elasticsearch, building binaries and more, info on how to run the python script locally
 > - Server mode (execute, defined by cron compatible config string)
