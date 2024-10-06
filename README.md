@@ -375,8 +375,6 @@ This script requires **Python 3.4+** and the following libraries:
 
 ### Installation
 
-
-
 ```bash
 git clone https://github.com/bananaacid/imapbox.git ./imapbox
 
@@ -446,7 +444,7 @@ The docker container will exit after execution, unless `server` is specified.
 
 ### Linux/WSL (bash)
 
-Within the same Py-Env, do:
+Within the same Py-Env as the [installation](#installation), do:
 ```bash
 pip install --no-cache-dir  pyinstaller
 
@@ -455,16 +453,16 @@ pyinstaller --add-data "VERSION:." --onefile ./imapbox.py
 
 ### MacOS (zsh)
 
-Within the same Py-Env, do:
+Within the same Py-Env as the [installation](#installation), do:
 ```bash
 pip install --no-cache-dir  pyinstaller
 
-pyinstaller --add-data "VERSION:." --onefile ./imapbox.py  --icon .\resources\logo.icns
+pyinstaller --add-data "VERSION:." --onefile ./imapbox.py  --icon ./resources/logo.icns
 ```
 
 ### Windows (Powershell)
 
-Within the same Py-Env, do:
+Within the same Py-Env as the [installation](#installation), do:
 ```powershell
 pip install --no-cache-dir  pyinstaller
 
