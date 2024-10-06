@@ -30,6 +30,7 @@ def load_configuration(args):
         'specific_folders': False,
         'test_only': False,
         'search_filter': None,
+        'search_output': None,
         'input_dsn': False,
         'server': None,
         'accounts': []
@@ -147,6 +148,9 @@ def load_configuration(args):
     if (args.search_filter):
         options['search_filter'] = args.search_filter
 
+    if (args.search_output):
+        options['search_output'] = args.search_output
+
     if (args.input_dsn):
         options['input_dsn'] = args.input_dsn
 
@@ -174,8 +178,9 @@ def main():
     argparser.add_argument('-c', '--config', dest='specific_config', metavar='PATH', help='Path to a config file to use')
     argparser.add_argument('-v', '--version', dest='show_version', help='Show the current version', action='store_true')
     argparser.add_argument('-s', '--search', dest='search_filter', metavar='FILTER', help='Search in backuped emails (Filter: `Keyword,\"fnmatch syntax\"`)')
+    argparser.add_argument('-so', '--search-output', dest='search_output', metavar='"text"|"json"', help='Search result output type (default: "text")', default="text", choices=['text', 'json'])
     argparser.add_argument('-i', '--input-dsn', dest='input_dsn', nargs='?', const=True, default=False, metavar='"gui"', help='Helper to generate a DSN string, adding the optional "gui" parameter will open the DSN generator in a GUI, can be used with --test')
-    argparser.add_argument('--server', dest='server', metavar='"CRONTABSTRING"', help='Starts as a server, triggering with the specified cron string')
+    argparser.add_argument('--server', dest='server', metavar='CRONTABSTRING', help='Starts as a server, triggering with the specified cron string')
     args = argparser.parse_args()
     options = load_configuration(args)
 

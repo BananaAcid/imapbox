@@ -111,6 +111,7 @@ Argument                      | Description
 -a ACCOUNT, --account ACCOUNT | Select a specific account section from the config to backup
 -v, --version                 | Show the current version
 -s FILTER, --search FILTER    | Search in backuped emails (Filter: `Keyword,"fnmatch syntax"`) <br> see [Search in emails without indexation process > Inbuild command](#inbuild-command)
+-so, --search-output TYPE     | Search result output type "text" or "json" (default: "text")
 -i, --input-dsn               | Helper to generate a DSN string, adding the optional "gui" parameter will open the DSN generator in a GUI, can be used with --test <br> see [about DSN](#about-dsn)
 --server CRONTABSTRING        | Starts as a server, triggering with the specified cron string, see https://crontab.guru
 
@@ -250,10 +251,56 @@ imapbox --local-folder ./backups --search From,"user@domain.*"
 
 # save results to a text file to be viewed easier
 imapbox --search From,"user@domain.*" > result.txt
+
+# save results to a josn file for further processing
+imapbox --search From,"user@domain.*" --search-output json > result.json
 ```
 
 `fnmatch` accepts shell-style wildcards, `*` as any length of characters and `?` as single character as well as `[seq]` for any of the defined characters in the group and `[!seq]` for none of the characters in the group. See: https://docs.python.org/3/library/fnmatch.html
 
+#### Regular search output
+
+looks like:
+```
+./INBOX/2024/...someid.../metadata.json
+{
+  ...
+}
+
+...
+
+Found 1
+```
+
+#### `--search-output json` prints regular json to the console, that can be piped to other commands.
+
+JSON Output:
+```json
+{
+  "filter": {"key": "WithText", "value": "True"},
+  "items": [
+    {
+        "filename": "./INBOX/2024/...someid.../metadata.json",
+        "content": { ... } // content of metadata file
+    },
+    ...
+  ],
+  "found": 1
+}
+
+```
+
+On Error:
+```json
+{
+  "error": 'Invalid search filter (`Keyword,"fnmatch syntax"`)',
+  "error_details": "...",
+  "filter": {},
+  "items": [],
+  "total": 0
+}
+```
+The error message will be written to the error pipe as well.
 
 ### Shell scripts
 
