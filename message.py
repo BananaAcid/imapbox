@@ -7,6 +7,7 @@ from email.utils import parseaddr
 from email.header import decode_header
 import re
 import os
+import signal
 import posixpath
 import sys
 import json
@@ -24,6 +25,7 @@ from html.parser import HTMLParser
 has_pdfkit = find_spec('pdfkit') is not None
 if has_pdfkit: import pdfkit
 
+TIMEOUT_SECONDS = 120
 
 # email address REGEX matching the RFC 2822 spec
 # from perlfaq9
@@ -240,7 +242,7 @@ class Message:
     def createHtmlFile(self, parts, embed):
         utf8_content = self.getHtmlContent(parts)
         for img in embed:
-            pattern = 'src=["\']cid:%s["\']' % (re.escape(img[0]))
+            pattern = r'src=["\']cid:%s["\']' % (re.escape(img[0]))
             path = posixpath.join('attachments', img[1])
             utf8_content = re.sub(pattern, 'src="%s"' % (path), utf8_content, 0, re.S | re.I)
 
@@ -342,6 +344,18 @@ class Message:
             html_path = os.path.join(self.directory, 'message.html')
             pdf_path = os.path.join(self.directory, 'message.pdf')
             config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf)
-            pdfkit.from_file(html_path, pdf_path, configuration=config)
+
+            def timeout_handler(signum, frame):
+                raise TimeoutError("PDF creation timed out.")
+
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(TIMEOUT_SECONDS)
+
+            try:
+                pdfkit.from_file(html_path, pdf_path, configuration=config)
+            except TimeoutError:
+                print("Timeout while creating PDF. wkhtmltopdf was terminated.")
+            finally:
+                signal.alarm(0)
         else:
             print("Couldn't create PDF message, since \"pdfkit\" module isn't installed.")

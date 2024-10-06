@@ -51,12 +51,13 @@ def get_account(dsn, name=None):
     The function will also set the name, either by the name parameter provided or generate one of the username and host.
     """
     account = {
-        'name': 'account',
+        'name': 'account', # this i different to imapbox.py
         'host': None,
         'port': 993,
         'username': None,
         'password': None,
-        'remote_folder': 'INBOX', # String (might contain a comma separated list of folders)
+        'remote_folder': 'INBOX',
+        'exclude_folder': None,
         'ssl': False,
     }
 

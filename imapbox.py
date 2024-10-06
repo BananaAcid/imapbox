@@ -83,14 +83,16 @@ def load_configuration(args):
             if (args.specific_account and (args.specific_account != section)):
                 continue
 
+            # ! updating this, you should also update dsn.py
             account = {
                 'name': section,
-                'remote_folder': 'INBOX',
-                'username': None,
-                'password': None,
                 'host': None,
                 'port': 993,
-                'ssl': False
+                'username': None,
+                'password': None,
+                'remote_folder': 'INBOX', # String (might contain a comma separated list of folders)
+                'exclude_folder': None,   # String (might contain a comma separated list of folders)
+                'ssl': False,
             }
 
             if config.has_option(section, 'dsn'):
@@ -120,6 +122,9 @@ def load_configuration(args):
 
             if config.has_option(section, 'remote_folder'):
                 account['remote_folder'] = config.get(section, 'remote_folder')
+
+            if config.has_option(section, 'exclude_folder'):
+                account['exclude_folder'] = config.get(section, 'exclude_folder')
 
             if (None == account['host'] or None == account['username'] or None == account['password']):
                 errorHandler(section, 'Invalid account')

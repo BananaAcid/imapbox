@@ -23,6 +23,9 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - Added inbuild email search option with optional json output
 > - Modernized the docker files
 > - Added documentation about how to use docker, adding metadata from subfolders to elasticsearch, building binaries and more, info on how to run the python script locally
+> - Reconnecting to mail boxes
+> - Defining folders to exclude
+> - Errors are real errors and can be piped to an error file
 > - Server mode (execute, defined by cron compatible config string)
 
 ## Quick use, using the released binary
@@ -92,10 +95,11 @@ host=imap.googlemail.com
 username=username2@gmail.com
 password=secret
 remote_folder=INBOX
+exclude_folder=Junk
 port=993
 
 [username3@domain.tld]
-dsn=imaps://username:password@domain.tld/__ALL__
+dsn=imaps://username:password@domain.tld/__ALL__?exclude_folder=Trash
 
 [username4@domain.tld]
 username=username4@domain.tld
@@ -148,6 +152,7 @@ host            | (required) IMAP server hostname
 username        | (required) Login id for the IMAP server.
 password        | (required) The password will be saved in cleartext, for security reasons, you have to run the imapbox script in userspace and set `chmod 700` on your `~/.config/mailbox/config.cfg` file. The user will prompted for a password if this parameter is missing.
 remote_folder   | (optional) IMAP folder name (multiple folder name is not supported for the moment). Default value is `INBOX`. You can use `__ALL__` to fetch all folders.
+exclude_folder  | (optional) IMAP folder name to exclude
 port            | (optional) Default value is `993`.
 ssl             | (optional) Default value is `False`. Set to `True` to enable SSL
 dsn             | (optinoal) Use a specific DSN to set account paramaters. All other parameters in the account section will overwrite these. The path defaults to `remote_folder`. To supply a single account only or multiple, this can be used multiple times with the shell argument `-n <dsn>` and `--dsn <dsn>` and ignoring all config accounts.
@@ -160,6 +165,8 @@ Usage example:
 ```bash
 imapbox -l ./test -f --dsn imaps://username:password@imap.server.tld/INBOX,Sent --dsn imaps://username:password@imap.server2.tld/__ALL__
 ```
+
+Additional section parameters can be used, like `exclude_folder`, appending them like `?exclude_folder=INBOX,ABC` and the next with `&nextone=...`
 
 The DSN shell arguments can be used with a config file, but will ignore all configured account and only honor the imapbox section.
 
