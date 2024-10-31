@@ -113,7 +113,7 @@ class MainWindow(BoxLayout):
             get_folders(account)
             self.output.text = 'Connection successful' + '\n' + dsn
         except:
-            self.output.text = 'FAILED: Login and folder retrival' + '\n' + dsn
+            self.output.text = 'FAILED: Testing login and folder retrival' + '\n' + dsn
             return
 
         if not account['show_DSN']:
