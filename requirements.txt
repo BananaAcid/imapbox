@@ -1,4 +1,3 @@
 chardet
 pdfkit
-kivy
 croniter

@@ -13,7 +13,6 @@ from utilities import errorHandler, get_version, is_docker
 from search import do_search
 from server import start_server
 
-
 def load_configuration(args):
     config = configparser.ConfigParser(allow_no_value=True)
     if (args.specific_config):
@@ -193,8 +192,11 @@ def main():
 
     if options['input_dsn']:
         if options['input_dsn'] == 'gui':
-            from gui import open_gui # placed here, because it might not be needed on load, so loading speeds up
-            open_gui(options)
+            try:
+                from gui import open_gui # placed here, because it might not be needed on load, so loading speeds up
+                open_gui(options)
+            except ModuleNotFoundError:
+                errorHandler('kivy', 'Python module not available')
         else:
             options = input_dsn(options)
             if not options['test_only']:
