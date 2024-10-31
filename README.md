@@ -137,7 +137,7 @@ Parameter       | Description
 ----------------|----------------------
 local_folder    | The full path to the folder where the emails should be stored. If the local_folder is not set, imapbox will default to download the emails in to the current folder (within docker, it defaults to `/var/imapbox`). This can be overwritten with the shell argument `-l` or `--local-folder`.
 days            | Number of days back to get in the IMAP account, this should be set greater and equals to the cronjob frequency. If this parameter is not set, imapbox will get all the emails from the IMAP account. This can be overwritten with the shell argument `-d` or `--days`.
-wkhtmltopdf     | The location of the `wkhtmltopdf` binary. By default `pdfkit` will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
+wkhtmltopdf     | The location of the `wkhtmltopdf` binary. By default `pdfkit` (wrapper for wkhtmltopdf) will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
 specific_folders| Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
 test_only       | Set to True and only a connection and folder retrival test will be performed, adding the optional `folders` as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
 server          | A specified cron string to start as a server, triggering with the specified cron string, see https://crontab.guru on how to define one. This can be overwritten with the shell argument `--server` 
@@ -397,6 +397,16 @@ pip install --no-cache-dir -r requirements.txt
 pip install --no-cache-dir -r requirements_optional.txt
 
 cd ..
+```
+
+PDF support:
+```bash
+# Linux, debain based
+apt install wkhtmltopdf
+# MacOs Homebrew
+brew install wkhtmltopdf
+# Windows Chocolatey
+choco install wkhtmltopdf
 ```
 
 ```bash

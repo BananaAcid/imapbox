@@ -355,5 +355,5 @@ class Message:
             finally:
                 signal.alarm(0)
         else:
-            errorHandler(None, 'Couldn\'t create PDF message, since "pdfkit" module isn\'t installed.', exitCode=None)
+            errorHandler(None, 'Couldn\'t create PDF message, since "pdfkit" module (wrapper for wkhtmltopdf) isn\'t installed.', exitCode=None)
 
