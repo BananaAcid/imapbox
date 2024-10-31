@@ -9,7 +9,7 @@ import configparser
 import os
 import sys
 import getpass
-from utilities import errorHandler, get_version, is_docker
+from utilities import errorHandler, get_version, is_docker, imaputf7decode
 from search import do_search
 from server import start_server
 
@@ -242,9 +242,10 @@ def do_accounts(options):
             else:
                 folders = str.split(account['remote_folder'], ',')
             for folder_entry in folders:
-                print("Saving folder: " + folder_entry) 
+                folder_entry_decoded = imaputf7decode(folder_entry);
+                print("Saving folder: " + folder_entry_decoded) 
                 account['remote_folder'] = folder_entry
-                options['local_folder'] = os.path.join(basedir, folder_entry.replace('"', ''))
+                options['local_folder'] = os.path.join(basedir, folder_entry_decoded.replace('"', ''))
                 save_emails(account, options)
         except Exception as e:
             errorHandler(e, ' - FAILED')
