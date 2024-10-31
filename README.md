@@ -139,8 +139,8 @@ local_folder    | The full path to the folder where the emails should be stored.
 days            | Number of days back to get in the IMAP account, this should be set greater and equals to the cronjob frequency. If this parameter is not set, imapbox will get all the emails from the IMAP account. This can be overwritten with the shell argument `-d` or `--days`.
 wkhtmltopdf     | The location of the `wkhtmltopdf` binary. By default `pdfkit` will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
 specific_folders| Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
-test_only       | Only a connection and folder retrival test will be performed, adding the optional "folders" as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
-server          | Starts as a server, triggering with the specified cron string, see https://crontab.guru . This can be overwritten with the shell argument `--server` 
+test_only       | Set to True and only a connection and folder retrival test will be performed, adding the optional `folders` as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
+server          | A specified cron string to start as a server, triggering with the specified cron string, see https://crontab.guru on how to define one. This can be overwritten with the shell argument `--server` 
 
 ### Other sections
 
@@ -165,12 +165,14 @@ DSN Example: `imaps://username:password@imap.server.tld:993/__ALL__`
 
 Usage example:
 ```bash
-imapbox -l ./test -f --dsn imaps://username:password@imap.server.tld/INBOX,Sent --dsn imaps://username:password@imap.server2.tld/__ALL__
+imapbox -l ./test -f --dsn imaps://username:password@imap.server.tld/INBOX,Sent --dsn imaps://username:password@imap.server2.tld/__ALL__?exclude_folder=Spam
 ```
 
 Additional section parameters can be used, like `exclude_folder`, appending them like `?exclude_folder=INBOX,ABC` and the next with `&nextone=...`
 
-The DSN shell arguments can be used with a config file, but will ignore all configured account and only honor the imapbox section. You can use `?name=` to overwrite/set the account name.
+You can use `?name=` to overwrite/set the account name (if no account name is provided, username@hostname will be used).
+
+> The DSN shell arguments can be used with a config file, but will ignore all configured account and only honor the imapbox section.
 
 You may generate a DSN with the commandline helper like:
 ```bash
@@ -187,7 +189,9 @@ Password:
 Remote folder (use __ALL__ to fetch all) [INBOX]:
 ```
 
-If the username, password or host contain any character considered special in a URI (such as : / ? # [ ] @ ! $ & ' ( ) * + , ; =), you must encode them. See [RFC 3986](https://www.ietf.org/rfc/rfc3986.txt) for the full list of reserved characters, for a simple overview see [urlencode](https://www.w3schools.com/tags/ref_urlencode.ASP). (You may use online urlencode tools to convert).
+> If the username, password or host contain any character considered special in a URI (such as : / ? # [ ] @ ! $ & ' ( ) * + , ; =), you must encode them. See [RFC 3986](https://www.ietf.org/rfc/rfc3986.txt) for the full list of reserved characters, for a simple overview see [urlencode](https://www.w3schools.com/tags/ref_urlencode.ASP). (You may use online urlencode tools to convert).
+>
+> Remote folder will automatically be encoded to IMAP-UTF-7 on use.
 
 ## Metadata file
 
