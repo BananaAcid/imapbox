@@ -120,7 +120,7 @@ Argument                      | Description
 -v, --version                 | Show the current version
 -s FILTER, --search FILTER    | Search in backuped emails (Filter: `Keyword,"fnmatch syntax"`) <br> see [Search in emails without indexation process > Inbuild command](#inbuild-command)
 -so, --search-output TYPE     | Search result output type "text" or "json" (default: "text")
--i, --input-dsn               | Helper to generate a DSN string, adding the optional "gui" parameter will open the DSN generator in a GUI, can be used with --test <br> see [about DSN](#about-dsn)
+-i, --input-dsn               | Helper to generate a DSN string, adding the optional "gui" parameter will open the DSN generator in a GUI (if the optional module is installed), can be used with --test <br> see [about DSN](#about-dsn)
 --server CRONTABSTRING        | Starts as a server, triggering with the specified cron string, see https://crontab.guru
 
 #### Note
@@ -388,6 +388,8 @@ source ./bin/activate
 .\Scripts\Activate.ps1
 
 pip install --no-cache-dir -r requirements.txt
+# install GUI lib, requires compiler tools and more - optional
+pip install --no-cache-dir -r requirements_optional.txt
 
 cd ..
 ```
