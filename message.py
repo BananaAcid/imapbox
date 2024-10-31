@@ -341,7 +341,13 @@ class Message:
             pdf_path = os.path.join(self.directory, 'message.pdf')
             config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf)
 
-            options = { "enable-local-file-access": None }
+            # allow local file access
+            #options = { "enable-local-file-access": None }
+
+            # allow local file access to images only
+            #'disable-local-file-access' : True, 
+            attdir = os.path.join(self.directory, 'attachments')
+            options = { 'allow': attdir }
 
 
             def timeout_handler(signum, frame):
