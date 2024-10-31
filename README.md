@@ -434,6 +434,8 @@ The docker container defaults `local_folder` internally to `/var/imapbox` to bac
 
 There is no need to specify `local_folder` within the config or as shell argument.
 
+wkhtmltopdf is installed to `/usr/bin/wkhtmltopdf` in the Docker container.
+
 The docker container will exit after execution, unless `server` is specified.
 
 ### Clean up, remove last generated container:
