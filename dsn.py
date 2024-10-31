@@ -111,7 +111,7 @@ def get_account(dsn, name=None):
             # merge all others params, to be able to overwrite username, password, ... and future account options
             else:
                 account[key] = value[0] if len(value) == 1 else value
-
+    
     return account
 
 

@@ -10,7 +10,7 @@ import hashlib
 import sys
 from message import Message
 import datetime
-from utilities import errorHandler
+from utilities import errorHandler, imaputf7encode
 
 MAX_RETRIES = 5
 
@@ -221,7 +221,7 @@ def get_folders(account):
     exclude_folder = []
 
     if account['exclude_folder']: 
-        exclude_folder = [folder.strip() for folder in account['exclude_folder'].split(',')]
+        exclude_folder = [imaputf7encode(folder.strip()) for folder in account['exclude_folder'].split(',')]
     
     for folder_entry in get_folder_fist(account):    
         folder_name = folder_entry.decode().replace("/", ".").split(' "." ')[1]

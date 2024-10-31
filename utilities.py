@@ -55,3 +55,19 @@ def imaputf7decode(s):
         else: out+=b64padanddecode(u)
         out+=a
     return out
+
+def imaputf7encode(s):
+    """"Encode a string into RFC2060 aka IMAP UTF7"""
+    s=s.replace('&','&-')
+    iters=iter(s)
+    unipart=out=''
+    for c in s:
+        if 0x20<=ord(c)<=0x7f :
+            if unipart!='' : 
+                out+='&'+base64.b64encode(unipart.encode('utf-16-be')).decode('ascii').rstrip('=')+'-'
+                unipart=''
+            out+=c
+        else : unipart+=c
+    if unipart!='' : 
+        out+='&'+base64.b64encode(unipart.encode('utf-16-be')).decode('ascii').rstrip('=')+'-'
+    return out    

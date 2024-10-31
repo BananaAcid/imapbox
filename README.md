@@ -28,6 +28,7 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - Errors are real errors and can be piped to an error file
 > - Huge folders support, icloud emails support
 > - Server mode (execute, defined by cron compatible config string)
+> - Folder name IMAP-UTF-7 decoding (umlauts and more work)
 
 ## Quick use, using the released binary
 
