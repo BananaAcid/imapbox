@@ -324,6 +324,8 @@ class Message:
 
         if message_parts['html']:
             self.createHtmlFile(message_parts['html'], message_parts['embed_images'])
+        elif message_parts['text']:
+            self.createHtmlFile(message_parts['text'], [])
 
         if message_parts['files']:
             attdir = os.path.join(self.directory, 'attachments')
