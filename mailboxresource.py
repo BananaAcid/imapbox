@@ -6,11 +6,10 @@ from __future__ import print_function
 import imaplib, email
 import re
 import os
-import hashlib
 import sys
 from message import Message
 import datetime
-from utilities import errorHandler, imaputf7encode
+from utilities import errorHandler, imaputf7encode, createReliableFoldername, createReliableMessageId
 
 MAX_RETRIES = 5
 
@@ -145,10 +144,7 @@ class MailboxClient:
 
     def getEmailFolder(self, msg, data):
         # 255is the max filename length on all systems
-        if msg['Message-Id'] and len(msg['Message-Id']) < 255:
-            foldername = re.sub(r'[^a-zA-Z0-9_\-\.() ]+', '', msg['Message-Id'])
-        else:
-            foldername = hashlib.sha224(data).hexdigest()
+        foldername = createReliableFoldername(msg['Message-Id'], data)
 
         year = 'None'
         if msg['Date']:
@@ -176,7 +172,8 @@ class MailboxClient:
                     except:
                         # print("couldn't decode message with utf-8 - trying 'ISO-8859-1'")
                         msg = email.message_from_string(response_part[1].decode("ISO-8859-1"))
-
+                
+                msg['Message-Id'] = message_id = createReliableMessageId(msg['Message-Id'], data)
                 directory = self.getEmailFolder(msg, data[0][1])
 
                 if os.path.exists(directory):
@@ -185,7 +182,7 @@ class MailboxClient:
                 os.makedirs(directory)
 
                 try:
-                    message = Message(directory, msg)
+                    message = Message(directory, msg, message_id)
                     message.createRawFile(data[0][1])
                     message.createMetaFile()
                     message.extractAttachments()
@@ -195,8 +192,7 @@ class MailboxClient:
 
                 except Exception as e:
                     # ex: Unsupported charset on decode
-                    print(directory)
-                    errorHandler(e, 'MailboxClient.saveEmail() failed', exitCode=None)
+                    errorHandler(e, f'MailboxClient.saveEmail() failed for {directory}', exitCode=None)
 
         return True
 

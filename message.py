@@ -77,9 +77,10 @@ def strip_tags(html):
 class Message:
     """Operation on a message"""
 
-    def __init__(self, directory, msg):
+    def __init__(self, directory, msg, message_id):
         self.msg = msg
         self.directory = directory
+        self.message_id = message_id
 
     def getmailheader(self, header_text, default="ascii"):
         """Decode header_text if needed"""
@@ -148,8 +149,8 @@ class Message:
         return (rfc2822, iso8601)
 
     def createMetaFile(self):
-        tos=self.getmailaddresses('to')
-        ccs=self.getmailaddresses('cc')
+        tos = self.getmailaddresses('to')
+        ccs = self.getmailaddresses('cc')
 
         parts = self.getParts()
         attachments = []
@@ -168,7 +169,7 @@ class Message:
 
         with io.open('%s/metadata.json' %(self.directory), 'w', encoding='utf8') as json_file:
             data = json.dumps({
-                'Id': self.msg['Message-Id'],
+                'Id': self.message_id,
                 'Subject' : self.getSubject(),
                 'From' : self.getFrom(),
                 'To' : tos,
@@ -184,8 +185,6 @@ class Message:
             json_file.write(data)
 
             json_file.close()
-
-
 
 
     def createRawFile(self, data):
@@ -278,8 +277,6 @@ class Message:
                 'files': []
             }
 
-
-
             for part in self.msg.walk():
                 # multipart/* are just containers
                 if part.get_content_maintype() == 'multipart':
@@ -344,6 +341,9 @@ class Message:
             pdf_path = os.path.join(self.directory, 'message.pdf')
             config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf)
 
+            options = { "enable-local-file-access": None }
+
+
             def timeout_handler(signum, frame):
                 raise TimeoutError("PDF creation timed out.")
 
@@ -351,9 +351,12 @@ class Message:
             signal.alarm(TIMEOUT_SECONDS)
 
             try:
-                pdfkit.from_file(html_path, pdf_path, configuration=config)
+                ret = pdfkit.from_file(html_path, pdf_path, configuration=config, options=options) # , verbose=True
+                print(f'PDFKIT: {ret}')
             except TimeoutError:
                 errorHandler(None, 'Timeout while creating PDF. wkhtmltopdf was terminated', exitCode=None)
+            except Exception as e:
+                errorHandler(e, 'Error while creating PDF. wkhtmltopdf was terminated', exitCode=None)
             finally:
                 signal.alarm(0)
         else:

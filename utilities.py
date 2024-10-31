@@ -76,4 +76,25 @@ def imaputf7encode(s):
         else : unipart+=c
     if unipart!='' : 
         out+='&'+base64.b64encode(unipart.encode('utf-16-be')).decode('ascii').rstrip('=')+'-'
-    return out    
+    return out
+
+
+import re
+import hashlib
+
+def createReliableMessageId(message_id, data):
+    if message_id and len(message_id.strip()) > 10:
+        msg_id_safe = re.sub(r'[^a-zA-Z0-9_\-\.() ]+', '', message_id.strip())
+    else:
+        msg_id_safe = hashlib.sha224(data).hexdigest()
+
+    return msg_id_safe
+
+def createReliableFoldername(message_id, data):
+    # 255 is the max filename length on all systems
+    if message_id and len(message_id.strip()) < 255:
+        foldername = re.sub(r'[^a-zA-Z0-9_\-\.() ]+', '', message_id.strip())
+    else:
+        foldername = hashlib.sha224(data).hexdigest()
+
+    return foldername
