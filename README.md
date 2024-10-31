@@ -14,10 +14,11 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - **Compatibility to the polo2ro's version is preserved**
 >
 > Some new features:
+> - Server mode (execute, defined by cron compatible config string)
 > - Test only mode (login credentials test), optionally output list of folders
 > - Argument to specify a specific config file
 > - Argument to show a version
-> - Accounts can be specified as DSN, provided in the config and multiple times in CLI
+> - Accounts can be specified as DSN, provided in the config and _multiple times_ in CLI
 > - A commandline helper to create a DSN 
 > - Changed error handling to behave like a common CLI tool, errors are logged to error pipe
 > - Added inbuild email search option with optional json output
@@ -26,9 +27,10 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - Reconnecting to mail boxes
 > - Defining folders to exclude
 > - Errors are real errors and can be piped to an error file
-> - Huge folders support, icloud emails support
-> - Server mode (execute, defined by cron compatible config string)
+> - Huge folders support
+> - icloud emails support
 > - Folder name IMAP-UTF-7 decoding (umlauts and more work)
+> - PDFs with images and PDFs for text only emails
 
 ## Quick use, using the released binary
 
