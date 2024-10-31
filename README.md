@@ -169,7 +169,7 @@ imapbox -l ./test -f --dsn imaps://username:password@imap.server.tld/INBOX,Sent 
 
 Additional section parameters can be used, like `exclude_folder`, appending them like `?exclude_folder=INBOX,ABC` and the next with `&nextone=...`
 
-The DSN shell arguments can be used with a config file, but will ignore all configured account and only honor the imapbox section.
+The DSN shell arguments can be used with a config file, but will ignore all configured account and only honor the imapbox section. You can use `?name=` to overwrite/set the account name.
 
 You may generate a DSN with the commandline helper like:
 ```bash
