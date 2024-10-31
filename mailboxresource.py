@@ -53,22 +53,29 @@ class MailboxClient:
                     self.selected_folder = True
                 break
             except ConnectionResetError as e:
-                errorHandler(None, f"MailboxClient: Connection error: {e}. Will retry...", exitCode=None)
+                errorHandler(None, f"MailboxClient: Connection error: {e}. Will retry ...", exitCode=None)
                 retries += 1
             except Exception as e:
-                errorHandler(None, f"MailboxClient: The following error happened: {e}. Will NOT retry...")
+                errorHandler(None, f"MailboxClient: The following error happened: {e}. Will NOT retry.")
 
         if retries == MAX_RETRIES:
-            errorHandler(None, 'MailboxClient: Maximum retries reached. Exiting...')
+            errorHandler(None, 'MailboxClient: Maximum retries reached. Exiting.')
 
     def search_emails(self, criterion, batch_size=5000):
         all_uids = []
         last_num = 0
+        loop = True
 
-        while True:
+        while loop:
             typ, data = self.mailbox.search(None, criterion, f'{last_num+1}:{last_num + batch_size}')
             if typ != 'OK':
-                raise imaplib.IMAP4.error(f"Error on searching emails: {data}")
+                # fallback if range is not supported
+                errorHandler(None, f"Batch range might not be supported by IMAP server. Retrying without ...", exitCode=None)
+                loop = False
+                typ, data = self.mailbox.search(None, criterion)
+
+                if typ != 'OK':
+                    raise imaplib.IMAP4.error(f"Error on searching emails ({criterion}: \"{typ}\" => {data}).")
 
             if data and len(data) > 0 and data[0]: 
                 batch_uids = data[0].split()
@@ -115,18 +122,18 @@ class MailboxClient:
                             n_exists += 1
                         break
                     except ConnectionResetError as e:
-                        errorHandler(None, f"Connection error while fetching email: {e}. Retrying...", exitCode=None)
+                        errorHandler(None, f"Connection error while fetching email: {e}. Retrying ...", exitCode=None)
                         self.connect_to_imap()
                         fetch_retries += 1
                     except imaplib.IMAP4.abort as e:
-                        errorHandler(None, f"Abort error while fetching email: {e}. Skipping...", exitCode=None)
+                        errorHandler(None, f"Abort error while fetching email: {e}. Skipping ...", exitCode=None)
                         self.connect_to_imap()
                         break
                     except Exception as e:
-                        errorHandler(None, f"Error while fetching email: {e}. Skipping...", exitCode=None)
+                        errorHandler(None, f"Error while fetching email: {e}. Skipping ...", exitCode=None)
                         break
                 if fetch_retries == MAX_RETRIES:
-                    errorHandler(None, '\nMaximum retries reached. Exiting...', 1)
+                    errorHandler(None, '\nMaximum retries reached. Exiting.', 1)
                     
             print("\r- ... done")
         return (n_saved, n_exists)

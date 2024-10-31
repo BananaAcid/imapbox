@@ -112,7 +112,7 @@ def load_configuration(args):
                     prompt=('Password for ' + account['username'] + ':' + account['host'] + ': ')
                     account['password'] = getpass.getpass(prompt=prompt)
                 except Exception as e:
-                    errorHandler(e, 'No password set for account {}. Could not ask for password. (no CLI?)'.format(section), exitCode=None)
+                    errorHandler(e, 'No password set for account {}. Could not ask for password (no CLI?)'.format(section), exitCode=None)
 
             if config.has_option(section, 'ssl'):
                 if config.get(section, 'ssl').lower() == "true":
@@ -196,7 +196,7 @@ def main():
                 from gui import open_gui # placed here, because it might not be needed on load, so loading speeds up
                 open_gui(options)
             except ModuleNotFoundError:
-                errorHandler('kivy', 'Python module not available')
+                errorHandler(None, 'Python module not available. Please install kivy.')
         else:
             options = input_dsn(options)
             if not options['test_only']:
@@ -228,7 +228,7 @@ def do_accounts(options):
                     print(' - Folders:', ', '.join(folders) )
                 print(' - SUCCESS: Login and folder retrival')
             except:
-                errorHandler(None, ' - FAILED: Login and folder retrival', exitCode=None)
+                errorHandler(None, ' - FAILED: Login and folder retrival.', exitCode=None)
             continue
 
         if options['specific_folders']:
