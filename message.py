@@ -358,7 +358,7 @@ class Message:
 
             try:
                 ret = pdfkit.from_file(html_path, pdf_path, configuration=config, options=options) # , verbose=True
-                print(f'PDFKIT: {ret}')
+                #DEBUG: print(f'PDFKIT: {ret}')
             except TimeoutError:
                 errorHandler(None, 'Timeout while creating PDF. wkhtmltopdf was terminated', exitCode=None)
             except Exception as e:
