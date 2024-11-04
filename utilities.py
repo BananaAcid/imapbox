@@ -86,7 +86,15 @@ def createReliableMessageId(message_id, data):
     if message_id and len(message_id.strip()) > 10:
         msg_id_safe = re.sub(r'[^a-zA-Z0-9_\-\.() ]+', '', message_id.strip())
     else:
-        msg_id_safe = hashlib.sha224(data).hexdigest()
+        try:
+            if type(data) is list:
+                msg_id_safe = hashlib.sha224(data[1]).hexdigest()
+            else:
+                msg_id_safe = hashlib.sha224(data).hexdigest()
+
+        except Exception as e:
+            errorHandler(e, '- FAILED: Creating message ID', exitCode=None)
+            raise e
 
     return msg_id_safe
 
@@ -95,6 +103,17 @@ def createReliableFoldername(message_id, data):
     if message_id and len(message_id.strip()) < 255:
         foldername = re.sub(r'[^a-zA-Z0-9_\-\.() ]+', '', message_id.strip())
     else:
-        foldername = hashlib.sha224(data).hexdigest()
+        try:
+            if type(data) is list:
+                foldername = hashlib.sha224(data[1]).hexdigest()
+            else:
+                foldername = hashlib.sha224(data).hexdigest()
+
+        except Exception as e:
+            errorHandler(e, '- FAILED: Creating folder name', exitCode=None)
+            raise e
 
     return foldername
+
+def hasTTY():
+    return sys.stdin and sys.stdin.isatty()

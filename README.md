@@ -20,17 +20,16 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - Argument to show a version
 > - Accounts can be specified as DSN, provided in the config and _multiple times_ in CLI
 > - A commandline helper to create a DSN 
-> - Changed error handling to behave like a common CLI tool, errors are logged to error pipe
+> - Changed error handling to behave like a common CLI tool, errors are logged to error pipe and can be redirected to a file
 > - Added inbuild email search option with optional json output
 > - Modernized the docker files
 > - Added documentation about how to use docker, adding metadata from subfolders to elasticsearch, building binaries and more, info on how to run the python script locally
 > - Reconnecting to mail boxes
 > - Defining folders to exclude
-> - Errors are real errors and can be piped to an error file
 > - Huge folders support
 > - icloud emails support
 > - Folder name IMAP-UTF-7 decoding (umlauts and more work)
-> - PDFs with images and PDFs for text only emails
+> - PDFs includes images and PDFs for text only emails
 
 ## Quick use, using the released binary
 
@@ -139,7 +138,7 @@ Parameter       | Description
 ----------------|----------------------
 local_folder    | The full path to the folder where the emails should be stored. If the local_folder is not set, imapbox will default to download the emails in to the current folder (within docker, it defaults to `/var/imapbox`). This can be overwritten with the shell argument `-l` or `--local-folder`.
 days            | Number of days back to get in the IMAP account, this should be set greater and equals to the cronjob frequency. If this parameter is not set, imapbox will get all the emails from the IMAP account. This can be overwritten with the shell argument `-d` or `--days`.
-wkhtmltopdf     | The location of the `wkhtmltopdf` binary. By default `pdfkit` (wrapper for wkhtmltopdf) will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
+wkhtmltopdf     | The location of the `wkhtmltopdf` binary, path can be left out. By default `pdfkit` (wrapper for wkhtmltopdf) will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows) if no path was given. This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
 specific_folders| Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
 test_only       | Set to True and only a connection and folder retrival test will be performed, adding the optional `folders` as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
 server          | A specified cron string to start as a server, triggering with the specified cron string, see https://crontab.guru on how to define one. This can be overwritten with the shell argument `--server` 

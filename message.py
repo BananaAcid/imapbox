@@ -3,13 +3,11 @@
 
 
 import email
-from email.utils import parseaddr
 from email.header import decode_header
 import re
 import os
 import signal
 import posixpath
-import sys
 import json
 import io
 import mimetypes
@@ -137,7 +135,7 @@ class Message:
 
     def normalizeDate(self, datestr):
         if not datestr:
-            print("No date for '%s'. Using Unix Epoch instead." % self.directory)
+            errorHandler(None, f'No date for "{self.directory}". Using Unix Epoch instead ...', exitCode=None)
             datestr="Thu, 1 Jan 1970 00:00:00 +0000"
         t = email.utils.parsedate_tz(datestr)
         timeval = time.mktime(t[:-1])
@@ -167,7 +165,7 @@ class Message:
 
         rfc2822, iso8601 = self.normalizeDate(self.msg['Date'])
 
-        with io.open('%s/metadata.json' %(self.directory), 'w', encoding='utf8') as json_file:
+        with io.open(os.path.join(self.directory, 'metadata.json'), 'w', encoding='utf8') as json_file:
             data = json.dumps({
                 'Id': self.message_id,
                 'Subject' : self.getSubject(),
@@ -198,9 +196,9 @@ class Message:
             try:
                 return chardet.detect(part.as_bytes())['encoding']
             except UnicodeEncodeError:
-                    string = part.as_string()
-                    array = bytearray(string, 'utf-8')
-                    return chardet.detect(array)['encoding']
+                string = part.as_string()
+                array = bytearray(string, 'utf-8')
+                return chardet.detect(array)['encoding']
         return part.get_content_charset()
 
 
@@ -210,7 +208,7 @@ class Message:
             for part in parts:
                 raw_content = part.get_payload(decode=True)
                 charset = self.getPartCharset(part)
-                self.text_content += raw_content.decode(charset, "replace")
+                self.text_content += raw_content.decode(charset, 'replace')
         return self.text_content
 
 
@@ -226,7 +224,7 @@ class Message:
             for part in parts:
                 raw_content = part.get_payload(decode=True)
                 charset = self.getPartCharset(part)
-                self.html_content += raw_content.decode(charset, "replace")
+                self.html_content += raw_content.decode(charset, 'replace')
 
             m = re.search(r'<body[^>]*>(.+)<\/body>', self.html_content, re.S | re.I)
             if (m != None):
@@ -235,8 +233,10 @@ class Message:
         return self.html_content
 
 
-    def createHtmlFile(self, parts, embed):
+    def createHtmlFile(self, parts, embed, isText=False):
         utf8_content = self.getHtmlContent(parts)
+        if isText:
+            utf8_content = '<pre>' + utf8_content + '</pre>'
         for img in embed:
             pattern = r'src=["\']cid:%s["\']' % (re.escape(img[0]))
             path = posixpath.join('attachments', img[1])
@@ -322,7 +322,7 @@ class Message:
         if message_parts['html']:
             self.createHtmlFile(message_parts['html'], message_parts['embed_images'])
         elif message_parts['text']:
-            self.createHtmlFile(message_parts['text'], [])
+            self.createHtmlFile(message_parts['text'], [], isText=True)
 
         if message_parts['files']:
             attdir = os.path.join(self.directory, 'attachments')
@@ -341,6 +341,10 @@ class Message:
             pdf_path = os.path.join(self.directory, 'message.pdf')
             config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf)
 
+            # check if html file exists, to prevent wkhtmltopdf from throwing this known generic error
+            if not os.path.isfile(html_path):
+                return
+            
             # allow local file access
             #options = { "enable-local-file-access": None }
 
@@ -360,11 +364,22 @@ class Message:
                 ret = pdfkit.from_file(html_path, pdf_path, configuration=config, options=options) # , verbose=True
                 #DEBUG: print(f'PDFKIT: {ret}')
             except TimeoutError:
-                errorHandler(None, 'Timeout while creating PDF. wkhtmltopdf was terminated', exitCode=None)
+                errorHandler(None, f'Timeout while creating PDF. wkhtmltopdf was terminated while creating {pdf_path}', exitCode=None)
             except Exception as e:
-                errorHandler(e, 'Error while creating PDF. wkhtmltopdf was terminated', exitCode=None)
+                errorHandler(e, f'Error while creating PDF. wkhtmltopdf was terminated while creating {pdf_path}', exitCode=None)
             finally:
                 signal.alarm(0)
         else:
-            errorHandler(None, 'Couldn\'t create PDF message, since "pdfkit" module (wrapper for wkhtmltopdf) isn\'t installed.', exitCode=None)
+            errorHandler(None, f'Couldn\'t create PDF message, since "pdfkit" module (wrapper for wkhtmltopdf) isn\'t installed. While creating {self.directory}', exitCode=None)
 
+
+
+    def checkIfExists(self):
+        # if metadata file exsits but is empty, we want to retry (there was an error during creation before)
+        metadataPath = os.path.join(self.directory, 'metadata.json')
+        if os.path.isfile(metadataPath):
+            # and if metadata is not empty
+            if os.stat(metadataPath).st_size != 0:
+                return True
+
+        return False

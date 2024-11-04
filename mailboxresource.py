@@ -6,10 +6,9 @@ from __future__ import print_function
 import imaplib, email
 import re
 import os
-import sys
 from message import Message
 import datetime
-from utilities import errorHandler, imaputf7encode, createReliableFoldername, createReliableMessageId
+from utilities import errorHandler, imaputf7encode, createReliableFoldername, createReliableMessageId, hasTTY
 
 MAX_RETRIES = 5
 
@@ -69,7 +68,7 @@ class MailboxClient:
             typ, data = self.mailbox.search(None, criterion, f'{last_num+1}:{last_num + batch_size}')
             if typ != 'OK':
                 # fallback if range is not supported
-                errorHandler(None, f"Batch range might not be supported by IMAP server. Retrying without ...", exitCode=None)
+                errorHandler(None, f"Warning: Batch range might not be supported by IMAP server. Retrying without ...", exitCode=None)
                 loop = False
                 typ, data = self.mailbox.search(None, criterion)
 
@@ -112,8 +111,8 @@ class MailboxClient:
                     try:
                         typ, data = self.mailbox.fetch(num, '(BODY.PEEK[])')
 
-                        if sys.stdin and sys.stdin.isatty():
-                            print('\r{0:.2f}%'.format(idx*100/total), end='')
+                        if hasTTY():
+                            print('\r{0:.2f}% '.format(idx*100/total), end='')
 
                         if self.saveEmail(data):
                             n_saved += 1
@@ -134,7 +133,7 @@ class MailboxClient:
                 if fetch_retries == MAX_RETRIES:
                     errorHandler(None, '\nMaximum retries reached. Exiting.', 1)
                     
-            print("\r- ... done")
+            # print("\r- ... done")
         return (n_saved, n_exists)
 
     def cleanup(self):
@@ -152,9 +151,7 @@ class MailboxClient:
             if match:
                 year = match.group(1)
 
-
         return os.path.join(self.local_folder, year, foldername)
-
 
 
     def saveEmail(self, data):
@@ -176,13 +173,13 @@ class MailboxClient:
                 msg['Message-Id'] = message_id = createReliableMessageId(msg['Message-Id'], data)
                 directory = self.getEmailFolder(msg, data[0][1])
 
-                if os.path.exists(directory):
-                    return False
-
-                os.makedirs(directory)
+                # we might retrying it, so check if directory exists and continue
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
 
                 try:
                     message = Message(directory, msg, message_id)
+                    if message.checkIfExists(): return False
                     message.createRawFile(data[0][1])
                     message.createMetaFile()
                     message.extractAttachments()
@@ -192,7 +189,7 @@ class MailboxClient:
 
                 except Exception as e:
                     # ex: Unsupported charset on decode
-                    errorHandler(e, f'MailboxClient.saveEmail() failed for {directory}', exitCode=None)
+                    errorHandler(e, f'\rError: MailboxClient.saveEmail() failed for {directory}', exitCode=None)
 
         return True
 
@@ -203,9 +200,9 @@ def save_emails(account, options):
         stats = mailbox.copy_emails(options['days'], options['local_folder'], options['wkhtmltopdf'])
         mailbox.cleanup()
         if stats[0] == 0 and stats[1] == 0:
-            print('- Done. Folder {} is empty'.format(account['remote_folder']))
+            print('\r- Done. Is empty')
         else:
-            print('- Done. {} emails created, {} emails already exists'.format(stats[0], stats[1]))
+            print('\r- Done. {} emails created, {} emails already exist'.format(stats[0], stats[1]))
 
 
 def get_folder_fist(account):
@@ -227,7 +224,7 @@ def get_folders(account):
         exclude_folder = [imaputf7encode(folder.strip()) for folder in account['exclude_folder'].split(',')]
     
     for folder_entry in get_folder_fist(account):    
-        folder_name = folder_entry.decode().replace("/", ".").split(' "." ')[1]
+        folder_name = folder_entry.decode().replace('/', '.').split(' "." ')[1]
         if folder_name.replace('"', '') not in exclude_folder:
             folders.append(folder_name)
     
