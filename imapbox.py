@@ -15,7 +15,7 @@ from server import start_server
 
 def load_configuration(args):
     config = configparser.ConfigParser(allow_no_value=True)
-    if (args.specific_config):
+    if args.specific_config:
         locations = args.specific_config
     else:
         locations = ['./config.cfg', '/etc/imapbox/config.cfg', os.path.expanduser('~/.config/imapbox/config.cfg')]
@@ -38,7 +38,7 @@ def load_configuration(args):
     if is_docker():
         options['local_folder'] = '/var/imapbox'
 
-    if (config.has_section('imapbox')):
+    if config.has_section('imapbox'):
         if config.has_option('imapbox', 'days'):
             options['days'] = config.getint('imapbox', 'days')
 
@@ -64,7 +64,7 @@ def load_configuration(args):
         for dsn in args.specific_dsn:
             try:
                 account = get_account(dsn)
-                if (None == account['host'] or None == account['username'] or None == account['password']):
+                if None == account['host'] or None == account['username'] or None == account['password']:
                     raise ValueError('host / username or password not set')
                 
             except Exception as e:
@@ -75,10 +75,10 @@ def load_configuration(args):
     else:
         for section in config.sections():
 
-            if ('imapbox' == section):
+            if 'imapbox' == section:
                 continue
 
-            if (args.specific_account and (args.specific_account != section)):
+            if args.specific_account and (args.specific_account != section):
                 continue
 
             # ! updating this, you should also update dsn.py
@@ -124,43 +124,43 @@ def load_configuration(args):
             if config.has_option(section, 'exclude_folder'):
                 account['exclude_folder'] = config.get(section, 'exclude_folder')
 
-            if (None == account['host'] or None == account['username'] or None == account['password']):
+            if None == account['host'] or None == account['username'] or None == account['password']:
                 errorHandler(section, 'Invalid account')
                 continue
 
             options['accounts'].append(account)
 
-    if (args.local_folder):
+    if args.local_folder:
         options['local_folder'] = args.local_folder
 
-    if (args.days):
+    if args.days:
         options['days'] = args.days
 
-    if (args.wkhtmltopdf):
+    if args.wkhtmltopdf:
         options['wkhtmltopdf'] = args.wkhtmltopdf
 
-    if (args.specific_folders):
+    if args.specific_folders:
         options['specific_folders'] = True
 
-    if (args.test_only):
+    if args.test_only:
         if args.test_only == 'folders':
             options['test_only'] = 'folders'
         else:
             options['test_only'] = True
 
-    if (args.search_filter):
+    if args.search_filter:
         options['search_filter'] = args.search_filter
 
-    if (args.search_output):
+    if args.search_output:
         options['search_output'] = args.search_output
 
-    if (args.input_dsn):
+    if args.input_dsn:
         options['input_dsn'] = args.input_dsn
 
-    if (args.server):
+    if args.server:
         options['server'] = args.server
 
-    if (args.show_version):
+    if args.show_version:
         print(get_version())
         sys.exit(0)
     

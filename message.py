@@ -227,7 +227,7 @@ class Message:
                 self.html_content += raw_content.decode(charset, 'replace')
 
             m = re.search(r'<body[^>]*>(.+)<\/body>', self.html_content, re.S | re.I)
-            if (m != None):
+            if m != None:
                 self.html_content = m.group(1)
 
         return self.html_content
@@ -303,7 +303,7 @@ class Message:
                 filename = self.sanitizeFilename(filename)
 
                 content_id =part.get('Content-Id')
-                if (content_id):
+                if content_id:
                     content_id = content_id[1:][:-1]
                     message_parts['embed_images'].append((content_id, filename))
 

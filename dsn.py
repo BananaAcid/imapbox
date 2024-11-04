@@ -84,10 +84,10 @@ def get_account(dsn, name=None):
         account['name'] = name
         
     else:
-        if (account['username']):
+        if account['username']:
             account['name'] = account['username']
             
-        if (account['host']):
+        if account['host']:
             account['name'] += '@' + account['host']
 
     if parsed_url.path != '':
@@ -127,10 +127,10 @@ def create_account_name(account, name = None):
     else:
         name = ''
 
-        if (account['username']):
+        if account['username']:
             name = account['username']
             
-        if (account['host']):
+        if account['host']:
             name += '@' + account['host']
 
         return name
