@@ -8,10 +8,12 @@ import argparse
 import configparser
 import os
 import sys
+import signal
 import getpass
 from utilities import errorHandler, get_version, is_docker, imaputf7decode
 from search import do_search
 from server import start_server
+
 
 def load_configuration(args):
     config = configparser.ConfigParser(allow_no_value=True)
@@ -249,6 +251,14 @@ def do_accounts(options):
                 save_emails(account, options)
         except Exception as e:
             errorHandler(e, ' - FAILED')
+
+
+def sigint_handler(signal, frame):
+    try:
+        sys.exit(130)
+    except SystemExit:
+        os._exit(130)
+signal.signal(signal.SIGINT, sigint_handler)
 
 
 if __name__ == '__main__':
