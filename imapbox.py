@@ -227,7 +227,8 @@ def do_accounts(options):
             try:
                 folders = get_folders(account)
                 if options['test_only'] == 'folders':
-                    print(' - Folders:', ', '.join(folders) )
+                    folder_entries_decoded = imaputf7decode( ', '.join(folders) )
+                    print(' - Folders:', folder_entries_decoded)
                 print(' - SUCCESS: Login and folder retrival')
             except:
                 errorHandler(None, ' - FAILED: Login and folder retrival.', exitCode=None)
