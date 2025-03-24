@@ -40,6 +40,11 @@ See more below
 - [about shell arguments](#the-imapbox-section)
 - [DSN argument](#about-dsn)
 
+## OAuth (GMail, Office365)
+
+You could use an IMAP Proxy to handle the OAauth
+- https://github.com/simonrob/email-oauth2-proxy
+
 ## Backup email folder
 
 For each email in an IMAP mailbox, a folder is created with the following files:
