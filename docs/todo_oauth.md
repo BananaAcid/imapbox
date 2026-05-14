@@ -1,5 +1,17 @@
 # implementation notes
 
+## Token ... https://raw.githubusercontent.com/simonrob/email-oauth2-proxy/refs/heads/main/README.md
+
+- Office 365: register a new [Microsoft identity application](https://learn.microsoft.com/entra/identity-platform/quickstart-register-app).
+- Gmail / Google Workspace: register a [Google API desktop app client](https://developers.google.com/identity/protocols/oauth2/native-app).
+- Outlook / Hotmail (personal accounts): If you are part of the Microsoft 365 Developer Programme or have an Azure account (including free accounts), you can create your own app registration in the Entra admin centre – see [this discussion](https://github.com/simonrob/email-oauth2-proxy/discussions/301) for a guide.
+If not, you will need to reuse an existing client ID – see, for example, [this sample configuration](https://github.com/simonrob/email-oauth2-proxy/issues/297#issuecomment-2424200404).
+- Fastmail: register a new [Fastmail OAuth client](https://www.fastmail.com/dev/#registration).
+- AOL and Yahoo Mail (and subproviders such as AT&T) are not currently allowing new client registrations with the OAuth email scope – the only option here is to reuse the credentials from an existing client that does have this permission.
+
+> Probably add config / setup for "Email OAuth 2.0 Proxy" and do not implement oauth directly? (Too many quirks?)
+>
+> Support [JMAP](https://jmap.io/) ?
 
 ## https://discuss.python.org/t/support-for-oauth2-in-poplib-imaplib/19747
 
