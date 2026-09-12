@@ -425,6 +425,10 @@ It might help to navigate with a file browser into the specific backup folder, f
 This script requires **Python 3.13+** and the following libraries:
 * [chardet](https://pypi.python.org/pypi/chardet) – required for character encoding detection.
 * [pdfkit](https://pypi.python.org/pypi/pdfkit) – optionally required for archiving emails to PDF.
+* [croniter](https://pypi.org/project/croniter/) - required for working with cron
+
+The following library requires **no more then Python 3.13**:
+* [kivy](https://github.com/kivy/kivy/issues/9225) - optional, for the gui
 
 ### Installation
 
@@ -441,7 +445,7 @@ source ./bin/activate
 .\Scripts\Activate.ps1
 
 pip install --no-cache-dir -r requirements.txt
-# install GUI lib, requires compiler tools and more - optional
+# install GUI lib (kivy), requires compiler tools and more - optional
 pip install --no-cache-dir -r requirements_optional.txt
 
 cd ..
