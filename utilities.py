@@ -11,6 +11,14 @@ import sys
 # e: if e is None, show no error details
 # caption: must always exist (is used from code to show a readable message)
 # exitCode: if exitCode is None, do not exit, just show the error
+
+# Print an error message
+#
+# Note: if e is NOT None, the message should not end with a dot, since a ':' will be appended
+#
+# e: if e is None, show no error details
+# caption: must always exist (is used from code to show a readable message)
+# exitCode: if exitCode is None, do not exit, just show the error
 def errorHandler(e, caption, exitCode=1):
     if hasattr(e, 'strerror'):
         msg = e.strerror
@@ -19,8 +27,11 @@ def errorHandler(e, caption, exitCode=1):
     
     if e is not None:
         # show error details, and in red
+        # show error details, and in red
         print('\x1b[31;20m{}:'.format(caption), msg, '\x1b[0m', file=sys.stderr)
     else:
+        # show no error details, and in cyan
+        print('\x1b[36;20m{}\x1b[0m'.format(caption), file=sys.stderr)
         # show no error details, and in cyan
         print('\x1b[36;20m{}\x1b[0m'.format(caption), file=sys.stderr)
 
