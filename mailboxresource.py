@@ -1,36 +1,93 @@
 #!/usr/bin/env python
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 from __future__ import print_function
 
 import imaplib, email
 import re
 import os
-import hashlib
 from message import Message
 import datetime
-import urllib
-from utilities import errorHandler
+from utilities import errorHandler, imaputf7encode, createReliableFoldername, createReliableMessageId, hasTTY
+
+MAX_RETRIES = 5
 
 class MailboxClient:
     """Operations on a mailbox"""
 
     def __init__(self, host, port, username, password, remote_folder, ssl):
-        if not ssl:
-            self.mailbox = imaplib.IMAP4(host, port)
-        else:
-            self.mailbox = imaplib.IMAP4_SSL(host, port)
-        self.mailbox.login(username, password)
-        typ, data = self.mailbox.select(remote_folder, readonly=True)
-        if typ != 'OK':
-            # Handle case where Exchange/Outlook uses '.' path separator when
-            # reporting subfolders. Adjust to use '/' on remote.
-            adjust_remote_folder = re.sub(r'\.', '/', remote_folder)
-            typ, data = self.mailbox.select(adjust_remote_folder, readonly=True)
+
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
+        self.remote_folder = remote_folder
+        self.ssl = ssl
+        self.selected_folder = False
+
+        self.connect_to_imap()
+
+    def connect_to_imap(self):
+        retries = 0
+        while retries < MAX_RETRIES:
+            try:
+                if not self.ssl:
+                    self.mailbox = imaplib.IMAP4(self.host, self.port)
+                else:
+                    self.mailbox = imaplib.IMAP4_SSL(self.host, self.port)
+                self.mailbox.login(self.username, self.password)
+                typ, data = self.mailbox.select(self.remote_folder, readonly=True)
+                if typ != 'OK':
+                    # Handle case where Exchange/Outlook uses '.' path separator when
+                    # reporting subfolders. Adjust to use '/' on remote.
+                    adjust_remote_folder = re.sub(r'\.', '/', self.remote_folder)
+                    typ, data = self.mailbox.select(adjust_remote_folder, readonly=True)
+                    if typ != 'OK':
+                        errorHandler(self.remote_folder, 'MailboxClient: Could not select remote folder', exitCode=None)
+                        self.selected_folder = False
+                    else:
+                        self.selected_folder = True   
+                else:
+                    self.selected_folder = True
+                break
+            except ConnectionResetError as e:
+                errorHandler(None, f"MailboxClient: Connection error: {e}. Will retry ...", exitCode=None)
+                retries += 1
+            except Exception as e:
+                errorHandler(None, f"MailboxClient: The following error happened: {e}. Will NOT retry.")
+
+        if retries == MAX_RETRIES:
+            errorHandler(None, 'MailboxClient: Maximum retries reached. Exiting.')
+
+    def search_emails(self, criterion, batch_size=5000):
+        all_uids = []
+        last_num = 0
+        loop = True
+
+        while loop:
+            typ, data = self.mailbox.search(None, criterion, f'{last_num+1}:{last_num + batch_size}')
             if typ != 'OK':
-                errorHandler(remote_folder, 'MailboxClient: Could not select remote folder', exitCode=None)
+                # fallback if range is not supported
+                errorHandler(None, f"Warning: Batch range might not be supported by IMAP server. Retrying without ...", exitCode=None)
+                loop = False
+                typ, data = self.mailbox.search(None, criterion)
 
+                if typ != 'OK':
+                    raise imaplib.IMAP4.error(f"Error on searching emails ({criterion}: \"{typ}\" => {data}).")
 
+            if data and len(data) > 0 and data[0]: 
+                batch_uids = data[0].split()
+            else:
+                batch_uids = []
+
+            if not batch_uids:
+                break
+
+            all_uids.extend(batch_uids)
+            last_num = last_num + batch_size
+
+        return all_uids
+    
     def copy_emails(self, days, local_folder, wkhtmltopdf):
 
         n_saved = 0
@@ -44,16 +101,40 @@ class MailboxClient:
             date = (datetime.date.today() - datetime.timedelta(days)).strftime("%d-%b-%Y")
             criterion = '(SENTSINCE {date})'.format(date=date)
 
-        typ, data = self.mailbox.search(None, criterion)
-        for num in data[0].split():
-            typ, data = self.mailbox.fetch(num, '(RFC822)')
-            if self.saveEmail(data):
-                n_saved += 1
-            else:
-                n_exists += 1
+        uids = self.search_emails(criterion)
+        if uids is not None and uids is not []:
+            print("- Copying emails ...")
+            total = len(uids)
+            for idx, num in enumerate(uids):
+                fetch_retries = 0
+                while fetch_retries < MAX_RETRIES:
+                    try:
+                        typ, data = self.mailbox.fetch(num, '(BODY.PEEK[])')
 
+                        if hasTTY():
+                            print('\r{0:.2f}% '.format(idx*100/total), end='')
+
+                        if self.saveEmail(data):
+                            n_saved += 1
+                        else:
+                            n_exists += 1
+                        break
+                    except ConnectionResetError as e:
+                        errorHandler(None, f"Connection error while fetching email: {e}. Retrying ...", exitCode=None)
+                        self.connect_to_imap()
+                        fetch_retries += 1
+                    except imaplib.IMAP4.abort as e:
+                        errorHandler(None, f"Abort error while fetching email: {e}. Skipping ...", exitCode=None)
+                        self.connect_to_imap()
+                        break
+                    except Exception as e:
+                        errorHandler(None, f"Error while fetching email: {e}. Skipping ...", exitCode=None)
+                        break
+                if fetch_retries == MAX_RETRIES:
+                    errorHandler(None, '\nMaximum retries reached. Exiting.', 1)
+                    
+            # print("\r- ... done")
         return (n_saved, n_exists)
-
 
     def cleanup(self):
         self.mailbox.close()
@@ -62,10 +143,7 @@ class MailboxClient:
 
     def getEmailFolder(self, msg, data):
         # 255is the max filename length on all systems
-        if msg['Message-Id'] and len(msg['Message-Id']) < 255:
-            foldername = re.sub(r'[^a-zA-Z0-9_\-\.() ]+', '', msg['Message-Id'])
-        else:
-            foldername = hashlib.sha224(data).hexdigest()
+        foldername = createReliableFoldername(msg['Message-Id'], data)
 
         year = 'None'
         if msg['Date']:
@@ -73,9 +151,7 @@ class MailboxClient:
             if match:
                 year = match.group(1)
 
-
         return os.path.join(self.local_folder, year, foldername)
-
 
 
     def saveEmail(self, data):
@@ -91,18 +167,19 @@ class MailboxClient:
                     try:
                         msg = email.message_from_string(response_part[1].decode("utf-8"))
                     except:
-                        print("couldn't decode message with utf-8 - trying 'ISO-8859-1'")
+                        # print("couldn't decode message with utf-8 - trying 'ISO-8859-1'")
                         msg = email.message_from_string(response_part[1].decode("ISO-8859-1"))
-
+                
+                msg['Message-Id'] = message_id = createReliableMessageId(msg['Message-Id'], data)
                 directory = self.getEmailFolder(msg, data[0][1])
 
-                if os.path.exists(directory):
-                    return False
-
-                os.makedirs(directory)
+                # we might retrying it, so check if directory exists and continue
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
 
                 try:
-                    message = Message(directory, msg)
+                    message = Message(directory, msg, message_id)
+                    if message.checkIfExists(): return False
                     message.createRawFile(data[0][1])
                     message.createMetaFile()
                     message.extractAttachments()
@@ -112,17 +189,20 @@ class MailboxClient:
 
                 except Exception as e:
                     # ex: Unsupported charset on decode
-                    print(directory)
-                    errorHandler(e, 'MailboxClient.saveEmail() failed', exitCode=None)
+                    errorHandler(e, f'\rError: MailboxClient.saveEmail() failed for {directory}', exitCode=None)
 
         return True
 
 
 def save_emails(account, options):
     mailbox = MailboxClient(account['host'], account['port'], account['username'], account['password'], account['remote_folder'], account['ssl'])
-    stats = mailbox.copy_emails(options['days'], options['local_folder'], options['wkhtmltopdf'])
-    mailbox.cleanup()
-    print('{} emails created, {} emails already exists'.format(stats[0], stats[1]))
+    if mailbox.selected_folder is True:
+        stats = mailbox.copy_emails(options['days'], options['local_folder'], options['wkhtmltopdf'])
+        mailbox.cleanup()
+        if stats[0] == 0 and stats[1] == 0:
+            print('\r- Done. Is empty')
+        else:
+            print('\r- Done. {} emails created, {} emails already exist'.format(stats[0], stats[1]))
 
 
 def get_folder_fist(account):
@@ -138,99 +218,18 @@ def get_folder_fist(account):
 
 def get_folders(account):
     folders = []
-    for folder_entry in get_folder_fist(account):
-        folders.append(folder_entry.decode().replace("/",".").split(' "." ')[1])
+    exclude_folder = []
+
+    if account['exclude_folder']: 
+        exclude_folder = [imaputf7encode(folder.strip()) for folder in account['exclude_folder'].split(',')]
+    
+    for folder_entry in get_folder_fist(account):    
+        folder_name = folder_entry.decode().replace('/', '.').split(' "." ')[1]
+        if folder_name.replace('"', '') not in exclude_folder:
+            folders.append(folder_name)
+    
     # Remove Gmail parent folder from array otherwise the script fails:
     if '"[Gmail]"' in folders: folders.remove('"[Gmail]"')
     # Remove Gmail "All Mail" folder which just duplicates emails:
     if '"[Gmail].All Mail"' in folders: folders.remove('"[Gmail].All Mail"')
     return folders
-
-
-# DSN:
-# defaults to INBOX, path represents a single folder:
-#  imap://username:password@imap.gmail.com:993/
-#  imap://username:password@imap.gmail.com:993/INBOX
-#
-# get all folders
-#  imap://username:password@imap.gmail.com:993/__ALL__
-#
-# singe folder with ssl, both are the same:
-#  imaps://username:password@imap.gmail.com:993/INBOX
-#  imap://username:password@imap.gmail.com:993/INBOX?ssl=true
-#
-# folder as provided as path or as query param "remote_folder" with comma separated list
-#  imap://username:password@imap.gmail.com:993/INBOX.Drafts
-#  imap://username:password@imap.gmail.com:993/?remote_folder=INBOX.Drafts
-#
-# combined list of folders with path and ?remote_folder
-#  imap://username:password@imap.gmail.com:993/INBOX.Drafts?remote_folder=INBOX.Sent
-#
-# with multiple remote_folder:
-#  imap://username:password@imap.gmail.com:993/?remote_folder=INBOX.Drafts
-#  imap://username:password@imap.gmail.com:993/?remote_folder=INBOX.Drafts,INBOX.Sent
-#
-# setting other parameters
-#  imap://username:password@imap.gmail.com:993/?name=Account1
-def get_account(dsn, name=None):
-    account = {
-        'name': 'account',
-        'host': None,
-        'port': 993,
-        'username': None,
-        'password': None,
-        'remote_folder': 'INBOX', # String (might contain a comma separated list of folders)
-        'ssl': False,
-    }
-
-    parsed_url = urllib.parse.urlparse(dsn)
-    
-    if parsed_url.scheme.lower() not in ['imap', 'imaps']:
-        raise ValueError('Scheme must be "imap" or "imaps"')
-    
-    account['ssl'] = parsed_url.scheme.lower() == 'imaps'
-    
-    if parsed_url.hostname:
-        account['host'] = parsed_url.hostname
-
-    if parsed_url.port:
-        account['port'] = parsed_url.port
-    if parsed_url.username:
-        account['username'] = urllib.parse.unquote(parsed_url.username)
-    if parsed_url.password:
-        account['password'] = urllib.parse.unquote(parsed_url.password)
-    
-    # prefill account name, if none was provided (by config.cfg) in case of calling it from commandline. can be overwritten by the query param 'name'
-    if name:
-        account['name'] = name
-        
-    else:
-        if (account['username']):
-            account['name'] = account['username']
-            
-        if (account['host']):
-            account['name'] += '@' + account['host']
-
-    if parsed_url.path != '':
-        account['remote_folder'] = parsed_url.path.lstrip('/').rstrip('/')
-
-    if parsed_url.query != '':
-        query_params = urllib.parse.parse_qs(parsed_url.query)
-
-        # merge query params into account
-        for key, value in query_params.items():
-
-            if key == 'remote_folder':
-                if account['remote_folder'] is not None:
-                    account['remote_folder'] += ',' + value[0]
-                else:
-                    account['remote_folder'] = value[0]
-            
-            elif key == 'ssl':
-                account['ssl'] = value[0].lower() == 'true'
-            
-            # merge all others params, to be able to overwrite username, password, ... and future account options
-            else:
-                account[key] = value[0] if len(value) == 1 else value
-
-    return account

@@ -1,4 +1,5 @@
 ![IMAPBOX](logo.png)
+## BananaAcid Edition
 
 Dump IMAP inbox to a local folder in a regular backupable format: EML, TXT, HTML, PDF, JSON and attachments.
 
@@ -6,21 +7,44 @@ This program aims to save a mailbox for archive using files in indexable or sear
 
 > [!NOTE]
 > **Why a fork?**
-> 
+>
 > This is a modified version, to include features that I believe are helpful as a CLI tool and a Docker service, as well as extending the readme with helpful information.
 > I use it together with ImapSync.
 >
+> - **Compatibility with polo2ro's version is preserved**
+>
 > Some new features:
+> - Server mode (execute, defined by cron compatible config string)
 > - Test only mode (login credentials test), optionally output list of folders
 > - Argument to specify a specific config file
 > - Argument to show a version
-> - Accounts can be specified as DSN, provided in the config and multiple times in CLI
-> - Changed error handling to behave like a common CLI tool, errors are logged to error pipe
-> - Added email search option
+> - Accounts can be specified as DSN, provided in the config and _multiple times_ in CLI
+> - A commandline helper to create a DSN
+> - Changed error handling to behave like a common CLI tool, errors are logged to error pipe and can be redirected to a file
+> - Added inbuilt email search option with optional json output
 > - Modernized the docker files
 > - Added documentation about how to use docker, adding metadata from subfolders to elasticsearch, building binaries and more, info on how to run the python script locally
-> - Tested on 200+ GB of real emails to fix crashes
+> - Reconnecting to mail boxes
+> - Defining folders to exclude
+> - Huge folders support
+> - icloud emails support
+> - Folder name IMAP-UTF-7 decoding (umlauts and more work)
+> - PDFs includes images and PDFs for text only emails
+> - Tested on 200+ GB and 10+ years of real emails to fix crashes
 
+## Quick use, using the released binary
+
+```bash
+imapbox -l ./backup --dsn imaps://username:password@imap.server.tld/__ALL__
+```
+See more below
+- [about shell arguments](#the-imapbox-section)
+- [DSN argument](#about-dsn)
+
+## OAuth (GMail, Office365)
+
+You could use an IMAP Proxy to handle the OAuth
+- https://github.com/simonrob/email-oauth2-proxy
 
 ## Backup email folder
 
@@ -65,6 +89,8 @@ days=6
 wkhtmltopdf=/opt/bin/wkhtmltopdf
 specific_folders=True
 # test_only=True
+## cron -> At minute 0 past every 4th hour -> see https://crontab.guru/#0_*/4_*_*_*
+# server=0 */4 * * *
 
 
 [accountName1]
@@ -78,10 +104,11 @@ host=imap.googlemail.com
 username=username2@gmail.com
 password=secret
 remote_folder=INBOX
+exclude_folder=Junk
 port=993
 
 [username3@domain.tld]
-dsn=imaps://username:password@domain.tld/__ALL__
+dsn=imaps://username:password@domain.tld/__ALL__?exclude_folder=Trash
 
 [username4@domain.tld]
 username=username4@domain.tld
@@ -90,6 +117,88 @@ dsn=imaps://domain.tld/__ALL__
 ```
 
 To run only a single account, the shell argument `-a` or `--account` can be used to specify which to use.
+
+### Shell arguments not related to the config sections
+
+Argument                      | Description
+------------------------------|-----------------------
+-h, --help                    | Show the help for all available shell arguments
+-c PATH, --config PATH        | Path to a config file to use <br> see [Config file](#config-file)
+-a ACCOUNT, --account ACCOUNT | Select a specific account section from the config to backup
+-v, --version                 | Show the current version
+-s FILTER, --search FILTER    | Search in backed-up emails (Filter: `Keyword,"fnmatch syntax"`) <br> see [Search in emails without indexation process > Inbuilt command](#inbuilt-command)
+-so, --search-output TYPE     | Search result output type "text" or "json" (default: "text")
+-i, --input-dsn               | Helper to generate a DSN string, adding the optional "gui" parameter will open the DSN generator in a GUI (if the optional module is installed), can be used with --test <br> see [about DSN](#about-dsn)
+--server CRONTABSTRING        | Starts as a server, triggering with the specified cron string, see https://crontab.guru
+
+#### Note
+
+`imap --input-dsn gui` has an option to execute the backup, but the log will only be visible if started from the commandline.
+This is not yet very practical for users with no shell experience, this makes the GUI part incomplete and should be considered experimental.
+
+### The imapbox section
+
+Possible parameters for the imapbox section, all are optional:
+
+Parameter       | Description
+----------------|----------------------
+local_folder    | The full path to the folder where the emails should be stored. If the local_folder is not set, imapbox will default to downloading the emails into the current folder (within docker, it defaults to `/var/imapbox`). This can be overwritten with the shell argument `-l` or `--local-folder`.
+days            | Number of days back to get in the IMAP account, this can be set greater than 0 and is the cron job frequency. If this parameter is not set, imapbox will get all the emails from the IMAP account. This can be overwritten with the shell argument `-d` or `--days`.
+wkhtmltopdf     | The location of the `wkhtmltopdf` binary, path can be left out. By default `pdfkit` (wrapper for wkhtmltopdf) will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows) if no path was given. This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
+specific_folders| Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
+test_only       | Set to True and only a connection and folder retrieval test will be performed, adding the optional `folders` as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
+server          | A specified cron string to start as a server, triggering with the specified cron string, see https://crontab.guru on how to define one. This can be overwritten with the shell argument `--server`
+
+### Other sections
+
+You can have as many configured accounts as you want, one per section. Section names may contain the account name.
+
+Possible parameters for an account section:
+
+Parameter       | Description
+----------------|----------------------
+host            | (required) IMAP server hostname
+username        | (required) Login id for the IMAP server.
+password        | (required) The password will be saved in cleartext, for security reasons, you have to run the imapbox script in userspace and set `chmod 700` on your `~/.config/mailbox/config.cfg` file. The user will be prompted for a password if this parameter is missing.
+remote_folder   | (optional) IMAP folder name (multiple folder name is not supported for the moment). Default value is `INBOX`. You can use `__ALL__` to fetch all folders.
+exclude_folder  | (optional) IMAP folder name to exclude
+port            | (optional) Default value is `993`.
+ssl             | (optional) Default value is `False`. Set to `True` to enable SSL
+dsn             | (optional) Use a specific DSN to set account parameters. All other parameters in the account section will overwrite these. The path defaults to `remote_folder`. To supply a single account only or multiple, this can be used multiple times with the shell argument `-n <dsn>` and `--dsn <dsn>` and ignoring all config accounts.
+
+#### about DSN:
+
+DSN Example: `imaps://username:password@imap.server.tld:993/__ALL__`
+
+Usage example:
+```bash
+imapbox -l ./test -f --dsn imaps://username:password@imap.server.tld/INBOX,Sent --dsn imaps://username:password@imap.server2.tld/__ALL__?exclude_folder=Spam
+```
+
+Additional section parameters can be used, like `exclude_folder`, appending them like `?exclude_folder=INBOX,ABC` and the next with `&nextone=...`
+
+You can use `?name=` to overwrite/set the account name (if no account name is provided, username@hostname will be used).
+
+> The DSN shell arguments can be used with a config file, but will ignore all configured accounts and only honor the imapbox section.
+
+You may generate a DSN with the commandline helper like:
+```bash
+imapbox --input-dsn
+```
+
+It will ask the following before generating the DSN and showing it to the shell:
+```
+Host:
+Port [993]:
+Use SSL? [Y/n]:
+Username:
+Password:
+Remote folder (use __ALL__ to fetch all) [INBOX]:
+```
+
+> If the username, password or host contain any character considered special in a URI (such as : / ? # [ ] @ ! $ & ' ( ) * + , ; =), you must encode them. See [RFC 3986](https://www.ietf.org/rfc/rfc3986.txt) for the full list of reserved characters, for a simple overview see [urlencode](https://www.w3schools.com/tags/ref_urlencode.ASP). (You may use online urlencode tools to convert).
+>
+> Remote folder will automatically be encoded to IMAP-UTF-7 on use.
 
 ### Interpolation
 
@@ -131,45 +240,6 @@ password=pa$sword$          # the $ are kept as-is
 ```
 
 `$$` stays `$$`; to write a literal `${`, double the `$`: `$${not-interpolated}`.
-
-### The imapbox section
-
-Possible parameters for the imapbox section, all are optional:
-
-Parameter       | Description
-----------------|----------------------
-local_folder    | The full path to the folder where the emails should be stored. If the local_folder is not set, imapbox will default to downloading the emails into the current folder (within docker, it defaults to `/var/imapbox`). This can be overwritten with the shell argument `-l` or `--local-folder`.
-days            | Number of days back to get in the IMAP account, this should be set greater than or equal to the cron job frequency. If this parameter is not set, imapbox will get all the emails from the IMAP account. This can be overwritten with the shell argument `-d` or `--days`.
-wkhtmltopdf     | The location of the `wkhtmltopdf` binary. By default `pdfkit` will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
-specific_folders| Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
-test_only       | Only a connection and folder retrieval test will be performed, adding the optional "folders" as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
-
-### Other sections
-
-You can have as many configured accounts as you want, one per section. Section names may contain the account name.
-
-Possible parameters for an account section:
-
-Parameter       | Description
-----------------|----------------------
-host            | (required) IMAP server hostname
-username        | (required) Login id for the IMAP server.
-password        | (required) The password will be saved in cleartext, for security reasons, you have to run the imapbox script in userspace and set `chmod 700` on your `~/.config/mailbox/config.cfg` file. The user will be prompted for a password if this parameter is missing.
-remote_folder   | (optional) IMAP folder name (multiple folder name is not supported for the moment). Default value is `INBOX`. You can use `__ALL__` to fetch all folders.
-port            | (optional) Default value is `993`.
-ssl             | (optional) Default value is `False`. Set to `True` to enable SSL
-dsn             | (optional) Use a specific DSN to set account parameters. All other parameters in the account section will overwrite these. The path defaults to `remote_folder`. To supply a single account only (instead of the config), this can be used multiple times with the shell argument `-n <dsn>` and `--dsn <dsn>`.
-
-#### about DSN:
-
-DSN Example: `imaps://username:password@imap.server.tld:993/__ALL__`
-
-Usage example:
-`imapbox -l ./test -f --dsn imaps://username:password@imap.server.tld/INBOX,Sent --dsn imaps://username:password@imap.server2.tld/__ALL__`
-
-The DSN shell arguments can be used with a config file, but will ignore all configured accounts and only honor the imapbox section.
-
-If the username, password or host contain any character considered special in a URI (such as : / ? # [ ] @ ! $ & ' ( ) * + , ; =), you must encode them. See [RFC 3986](https://www.ietf.org/rfc/rfc3986.txt) for the full list of reserved characters, for a simple overview see [urlencode](https://www.w3schools.com/tags/ref_urlencode.ASP). (You may use online urlencode tools to convert).
 
 ## Metadata file
 
@@ -218,6 +288,14 @@ A front-end can be used to search in email archives:
 * [Calaca](https://github.com/polo2ro/Calaca) is a beautiful, easy to use, search UI for Elasticsearch.
 * [Facetview2](https://github.com/CottageLabs/facetview2)
 
+### CouchDB
+
+The same applies for adding to CouchDB (the `imapbox` db must exist), just replace the curl line:
+
+```bash
+curl -XPUT "localhost:5984/imapbox/${ID}" --data-binary "@${METADATAPATH}"
+```
+
 ## Search in emails without indexation process
 
 ### Inbuilt command
@@ -232,13 +310,65 @@ imapbox --search From,"user@domain.*"  # any tld
 imapbox --search Body,"*some text*"    # in between text
 imapbox --search WithText,True         # check boolean value
 
+# use a specific local folder
 imapbox --local-folder ./backups --search From,"user@domain.*"
+
+# save results to a text file to be viewed easier
+imapbox --search From,"user@domain.*" > result.txt
+
+# save results to a json file for further processing
+imapbox --search From,"user@domain.*" --search-output json > result.json
 ```
 
 `fnmatch` accepts shell-style wildcards, `*` as any length of characters and `?` as a single character as well as `[seq]` for any of the defined characters in the group and `[!seq]` for none of the characters in the group. See: https://docs.python.org/3/library/fnmatch.html
 
+#### Regular search output
+
+looks like:
+```
+./INBOX/2024/...someid.../metadata.json
+{
+  ...
+}
+
+...
+
+Found 1
+```
+
+#### `--search-output json` prints regular json to the console, that can be piped to other commands.
+
+JSON Output:
+```json
+{
+  "filter": {"key": "WithText", "value": "True"},
+  "items": [
+    {
+        "filename": "./INBOX/2024/...someid.../metadata.json",
+        "content": { ... } // content of metadata file
+    },
+    ...
+  ],
+  "found": 1
+}
+
+```
+
+On Error:
+```json
+{
+  "error": 'Invalid search filter (`Keyword,"fnmatch syntax"`)',
+  "error_details": "...",
+  "filter": {},
+  "items": [],
+  "total": 0
+}
+```
+The error message will be written to the error pipe as well.
 
 ### Shell scripts
+
+If you need to do more complex searches or handle the results in scripts, you can resort to using shell scripts to handle the [Metadata Files](#metadata-file).
 
 [jq](http://stedolan.github.io/jq/) is a lightweight and flexible command-line JSON processor.
 
@@ -255,7 +385,7 @@ find . -name "*.json" | xargs cat | jq 'select(.Utc > "20150221T130000Z")'
 ```
 
 
-Powershell examples:
+PowerShell examples:
 
 ```powershell
 gci -r -filter *.json |% { gc $_ | ConvertFrom-Json } |? { $_.Subject -imatch "Welcome" }
@@ -281,7 +411,7 @@ It might help to navigate with a file browser into the specific backup folder, f
 - If you're using Windows, you can extract GZ files using the `tar -xvzf filename.gz` command in Command Prompt or by installing the 7-Zip program and using `7zip x filename.gz`
   ```
   tar:
-  x = eXtract 
+  x = eXtract
   z = filter through gZip
   v = be Verbose (show activity)
   f = filename
@@ -298,12 +428,10 @@ This script requires **Python 3.13+** and the following libraries:
 
 ### Installation
 
-
-
 ```bash
 git clone https://github.com/bananaacid/imapbox.git ./imapbox
 
-cd imapbox 
+cd imapbox
 
 python -m venv ./
 
@@ -313,8 +441,20 @@ source ./bin/activate
 .\Scripts\Activate.ps1
 
 pip install --no-cache-dir -r requirements.txt
+# install GUI lib, requires compiler tools and more - optional
+pip install --no-cache-dir -r requirements_optional.txt
 
 cd ..
+```
+
+PDF support:
+```bash
+# Linux, Debian based
+apt install wkhtmltopdf
+# MacOs Homebrew
+brew install wkhtmltopdf
+# Windows Chocolatey
+choco install wkhtmltopdf
 ```
 
 ```bash
@@ -324,6 +464,8 @@ python ./imapbox/imapbox.py
 ```
 
 ## Usage with Docker compose
+
+Docker image: [bananaacid/imapbox](https://hub.docker.com/r/bananaacid/imapbox)
 
 ```yaml
 services:
@@ -353,9 +495,13 @@ volumes:
 
 ### Note
 
-The docker container defaults `local_folder` internally to `/var/imapbox` to backup emails, if run within docker. 
+The docker container defaults `local_folder` internally to `/var/imapbox` to backup emails, if run within docker.
 
 There is no need to specify `local_folder` within the config or as shell argument.
+
+wkhtmltopdf is installed to `/usr/bin/wkhtmltopdf` in the Docker container.
+
+The docker container will exit after execution, unless `server` is specified.
 
 ### Clean up, remove last generated container:
 
@@ -365,25 +511,25 @@ There is no need to specify `local_folder` within the config or as shell argumen
 
 ### Linux/WSL (bash)
 
-Within the same Py-Env, do:
+Within the same Py-Env as the [installation](#installation), do:
 ```bash
 pip install --no-cache-dir  pyinstaller
 
-pyinstaller --add-data "VERSION:." --onefile ./imapbox.py  
+pyinstaller --add-data "VERSION:." --onefile ./imapbox.py
 ```
 
 ### MacOS (zsh)
 
-Within the same Py-Env, do:
+Within the same Py-Env as the [installation](#installation), do:
 ```bash
 pip install --no-cache-dir  pyinstaller
 
-pyinstaller --add-data "VERSION:." --onefile ./imapbox.py  --icon .\resources\logo.icns
+pyinstaller --add-data "VERSION:." --onefile ./imapbox.py  --icon ./resources/logo.icns
 ```
 
-### Windows (Powershell)
+### Windows (PowerShell)
 
-Within the same Py-Env, do:
+Within the same Py-Env as the [installation](#installation), do:
 ```powershell
 pip install --no-cache-dir  pyinstaller
 
@@ -417,7 +563,7 @@ If you run this multiple times, remove the previously generated images and conta
 6. `docker push [USERNAME]/imapbox:$(cat VERSION)`
 7. `docker push [USERNAME]/imapbox:latest`
 
-Pushing to Docker Hub requires the image name ("username/imapbox") to be exactly what the website shows in "Docker commands". 
+Pushing to Docker Hub requires the image name ("username/imapbox") to be exactly what the website shows in "Docker commands".
 
 ## Similar projects
 
