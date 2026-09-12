@@ -15,7 +15,6 @@ This program aims to save a mailbox for archive using files in indexable or sear
 >
 > Some new features:
 > - Server mode (execute, defined by cron compatible config string)
-> - Server mode (execute, defined by cron compatible config string)
 > - Test only mode (login credentials test), optionally output list of folders
 > - Argument to specify a specific config file
 > - Argument to show a version
@@ -366,53 +365,8 @@ On Error:
 }
 ```
 The error message will be written to the error pipe as well.
-#### Regular search output
-
-looks like:
-```
-./INBOX/2024/...someid.../metadata.json
-{
-  ...
-}
-
-...
-
-Found 1
-```
-
-#### `--search-output json` prints regular json to the console, that can be piped to other commands.
-
-JSON Output:
-```json
-{
-  "filter": {"key": "WithText", "value": "True"},
-  "items": [
-    {
-        "filename": "./INBOX/2024/...someid.../metadata.json",
-        "content": { ... } // content of metadata file
-    },
-    ...
-  ],
-  "found": 1
-}
-
-```
-
-On Error:
-```json
-{
-  "error": 'Invalid search filter (`Keyword,"fnmatch syntax"`)',
-  "error_details": "...",
-  "filter": {},
-  "items": [],
-  "total": 0
-}
-```
-The error message will be written to the error pipe as well.
 
 ### Shell scripts
-
-If you need to do more complex searches or handle the results in scripts, you can resort to using shell scripts to handle the [Metadata Files](#metadata-file).
 
 If you need to do more complex searches or handle the results in scripts, you can resort to using shell scripts to handle the [Metadata Files](#metadata-file).
 
@@ -513,8 +467,6 @@ python ./imapbox/imapbox.py
 
 Docker image: [bananaacid/imapbox](https://hub.docker.com/r/bananaacid/imapbox)
 
-Docker image: [bananaacid/imapbox](https://hub.docker.com/r/bananaacid/imapbox)
-
 ```yaml
 services:
 
@@ -551,10 +503,6 @@ wkhtmltopdf is installed to `/usr/bin/wkhtmltopdf` in the Docker container.
 
 The docker container will exit after execution, unless `server` is specified.
 
-wkhtmltopdf is installed to `/usr/bin/wkhtmltopdf` in the Docker container.
-
-The docker container will exit after execution, unless `server` is specified.
-
 ### Clean up, remove last generated container:
 
 `docker compose rm imapbox`
@@ -563,7 +511,6 @@ The docker container will exit after execution, unless `server` is specified.
 
 ### Linux/WSL (bash)
 
-Within the same Py-Env as the [installation](#installation), do:
 Within the same Py-Env as the [installation](#installation), do:
 ```bash
 pip install --no-cache-dir  pyinstaller
@@ -574,17 +521,14 @@ pyinstaller --add-data "VERSION:." --onefile ./imapbox.py
 ### MacOS (zsh)
 
 Within the same Py-Env as the [installation](#installation), do:
-Within the same Py-Env as the [installation](#installation), do:
 ```bash
 pip install --no-cache-dir  pyinstaller
 
-pyinstaller --add-data "VERSION:." --onefile ./imapbox.py  --icon ./resources/logo.icns
 pyinstaller --add-data "VERSION:." --onefile ./imapbox.py  --icon ./resources/logo.icns
 ```
 
 ### Windows (PowerShell)
 
-Within the same Py-Env as the [installation](#installation), do:
 Within the same Py-Env as the [installation](#installation), do:
 ```powershell
 pip install --no-cache-dir  pyinstaller
