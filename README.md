@@ -7,7 +7,7 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > [!NOTE]
 > **Why a fork?**
 > 
-> This is a modified version, to include features that I believe are helpful as a CLI tool and a Docker service, as well as extending the readme with helpful infos.
+> This is a modified version, to include features that I believe are helpful as a CLI tool and a Docker service, as well as extending the readme with helpful information.
 > I use it together with ImapSync.
 >
 > Some new features:
@@ -19,6 +19,7 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - Added email search option
 > - Modernized the docker files
 > - Added documentation about how to use docker, adding metadata from subfolders to elasticsearch, building binaries and more, info on how to run the python script locally
+> - Tested on 200+ GB of real emails to fix crashes
 
 
 ## Backup email folder
@@ -29,13 +30,13 @@ File              | Description
 ------------------|------------------
 __message.html__  | If an html part exists for the message body. the `message.html` will always be in UTF-8, the embedded images links are modified to refer to the attachments subfolder.
 __message.pdf__   | This file is optionally created from `message.html` when the `wkhtmltopdf` option is set in the config file.
-__attachments__   | The attachments folder contains the attached files and the embeded images.
-__message.txt__   | This file contain the body text if available in the original email, always converted in UTF-8.
-__metadata.json__ | Various informations in JSON format, date, recipients, body text, etc... This file can be used from external applications or a search engine like [Elasticsearch](http://www.elasticsearch.com/).
-__raw.eml.gz__    | A gziped version of the email in `.eml` format.
+__attachments__   | The attachments folder contains the attached files and the embedded images.
+__message.txt__   | This file contains the body text if available in the original email, always converted in UTF-8.
+__metadata.json__ | Various information in JSON format, date, recipients, body text, etc... This file can be used from external applications or a search engine like [Elasticsearch](http://www.elasticsearch.com/).
+__raw.eml.gz__    | A gzipped version of the email in `.eml` format.
 
 Imapbox was designed to archive multiple mailboxes in one common folder tree,
-copies of the same message spread knew several account will be archived once using the Message-Id property, if possible (ID not missing, ID not to long for filesystem).
+copies of the same message spread across several accounts will be archived once using the Message-Id property, if possible (ID not missing, ID not too long for filesystem).
 
 ## Use cases
 
@@ -43,7 +44,7 @@ copies of the same message spread knew several account will be archived once usi
 * Archive multiple accounts into different folders.
 * Report on a website the content of an email address, like a mailing list.
 * Sharing address of several employees to perform cross-searches on a common database.
-* Archiving an IMAP account because of mailbox size restrictions, or to restrain the used disk space on the IMAP server.
+* Archiving an IMAP account because of mailbox size restrictions, or to restrict the used disk space on the IMAP server.
 * Archiving emails to PDF format.
 
 ## Usage without config file
@@ -54,7 +55,7 @@ See: [about DSN: Usage example](#about-dsn)
 
 Use `./config.cfg` `~/.config/imapbox/config.cfg` or `/etc/imapbox/config.cfg`
 
-Alternatively specifiy the shell argument `-c` (or `--config`) to provide the path to a config file. E.g. `-c ./config.client1.cfg`
+Alternatively specify the shell argument `-c` (or `--config`) to provide the path to a config file. E.g. `-c ./config.client1.cfg`
 
 Example:
 ```ini
@@ -90,33 +91,74 @@ dsn=imaps://domain.tld/__ALL__
 
 To run only a single account, the shell argument `-a` or `--account` can be used to specify which to use.
 
+### Interpolation
+
+> [!NOTE]
+> Before 1.4.0, `%` was used for interpolation of values, now it is only `${...}`
+>
+> **You might need to fix escaped password strings, as escaping is probably not needed anymore.**
+
+Config values support `${...}` interpolation, useful to avoid repeating values
+between sections:
+
+- `${name}` refers to an option in the unnamed section, the `key=value` block at the top of the config file before the first `[section]` header.
+- `${section:name}` refers to an option in a named section.
+- `${env:name}` refers to an option in the `[env]` section, or falls back to an environment variable of the same name.
+
+```ini
+user=mail@domain.tld          # unnamed section: shared variables
+password=secret
+
+[mailbox]
+username=${user}
+dsn=imaps://${user}:${password}@domain.tld/INBOX
+```
+
+Environment variables (or an `[env]` section overriding them) can be used to
+keep secrets out of the config file:
+
+```ini
+[mailbox]
+password=${env:IMAPBOX_PASSWORD}
+```
+
+A `$` not immediately followed by `{` is passed through literally, so passwords
+or DSNs may contain `$` without escaping:
+
+```ini
+[account]
+password=pa$sword$          # the $ are kept as-is
+```
+
+`$$` stays `$$`; to write a literal `${`, double the `$`: `$${not-interpolated}`.
+
 ### The imapbox section
 
-Possibles parameters for the imapbox section, all are optional:
+Possible parameters for the imapbox section, all are optional:
 
 Parameter       | Description
 ----------------|----------------------
-local_folder    | The full path to the folder where the emails should be stored. If the local_folder is not set, imapbox will default to download the emails in to the current folder (within docker, it defaults to `/var/imapbox`). This can be overwritten with the shell argument `-l` or `--local-folder`.
-days            | Number of days back to get in the IMAP account, this should be set greater and equals to the cronjob frequency. If this parameter is not set, imapbox will get all the emails from the IMAP account. This can be overwritten with the shell argument `-d` or `--days`.
+local_folder    | The full path to the folder where the emails should be stored. If the local_folder is not set, imapbox will default to downloading the emails into the current folder (within docker, it defaults to `/var/imapbox`). This can be overwritten with the shell argument `-l` or `--local-folder`.
+days            | Number of days back to get in the IMAP account, this should be set greater than or equal to the cron job frequency. If this parameter is not set, imapbox will get all the emails from the IMAP account. This can be overwritten with the shell argument `-d` or `--days`.
 wkhtmltopdf     | The location of the `wkhtmltopdf` binary. By default `pdfkit` will attempt to locate this using `which` (on UNIX type systems) or `where` (on Windows). This can be overwritten with the shell argument `-w` or `--wkhtmltopdf`.
 specific_folders| Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
-test_only       | Only a connection and folder retrival test will be performed, adding the optional "folders" as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
+test_only       | Only a connection and folder retrieval test will be performed, adding the optional "folders" as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
 
 ### Other sections
 
-You can have has many configured account as you want, one per section. Sections names may contains the account name.
+You can have as many configured accounts as you want, one per section. Section names may contain the account name.
 
-Possibles parameters for an account section:
+Possible parameters for an account section:
 
 Parameter       | Description
 ----------------|----------------------
 host            | (required) IMAP server hostname
 username        | (required) Login id for the IMAP server.
-password        | (required) The password will be saved in cleartext, for security reasons, you have to run the imapbox script in userspace and set `chmod 700` on your `~/.config/mailbox/config.cfg` file. The user will prompted for a password if this parameter is missing.
+password        | (required) The password will be saved in cleartext, for security reasons, you have to run the imapbox script in userspace and set `chmod 700` on your `~/.config/mailbox/config.cfg` file. The user will be prompted for a password if this parameter is missing.
 remote_folder   | (optional) IMAP folder name (multiple folder name is not supported for the moment). Default value is `INBOX`. You can use `__ALL__` to fetch all folders.
 port            | (optional) Default value is `993`.
 ssl             | (optional) Default value is `False`. Set to `True` to enable SSL
-dsn             | (optinoal) Use a specific DSN to set account paramaters. All other parameters in the account section will overwrite these. The path defaults to `remote_folder`. To supply a single account only (instead of the config), this can be used multiple times with the shell argument `-n <dsn>` and `--dsn <dsn>`.
+dsn             | (optional) Use a specific DSN to set account parameters. All other parameters in the account section will overwrite these. The path defaults to `remote_folder`. To supply a single account only (instead of the config), this can be used multiple times with the shell argument `-n <dsn>` and `--dsn <dsn>`.
 
 #### about DSN:
 
@@ -125,7 +167,7 @@ DSN Example: `imaps://username:password@imap.server.tld:993/__ALL__`
 Usage example:
 `imapbox -l ./test -f --dsn imaps://username:password@imap.server.tld/INBOX,Sent --dsn imaps://username:password@imap.server2.tld/__ALL__`
 
-The DSN shell arguments can be used with a config file, but will ignore all configured account and only honor the imapbox section.
+The DSN shell arguments can be used with a config file, but will ignore all configured accounts and only honor the imapbox section.
 
 If the username, password or host contain any character considered special in a URI (such as : / ? # [ ] @ ! $ & ' ( ) * + , ; =), you must encode them. See [RFC 3986](https://www.ietf.org/rfc/rfc3986.txt) for the full list of reserved characters, for a simple overview see [urlencode](https://www.w3schools.com/tags/ref_urlencode.ASP). (You may use online urlencode tools to convert).
 
@@ -138,7 +180,7 @@ Body            | A text version of the message
 From            | Name and email of the sender
 To              | An array of recipients
 Cc              | An array of recipients
-Attachments     | An array of files names
+Attachments     | An array of file names
 Date            | Message date with the timezone included, in the `RFC 2822` format
 Utc             | Message date converted in UTC, in the `ISO 8601` format. This can be used to sort emails or filter emails by date
 WithHtml        | Boolean, if the `message.html` file exists or not
@@ -146,8 +188,8 @@ WithText        | Boolean, if the `message.txt` file exists or not
 
 ## Elasticsearch
 
-The `metadata.json` file contain the necessary informations for a search engine like [Elasticsearch](http://www.elasticsearch.com/).
-Populate an Elasticsearch index with the emails metadata can be done with a simple script.
+The `metadata.json` file contains the necessary information for a search engine like [Elasticsearch](http://www.elasticsearch.com/).
+Populating an Elasticsearch index with the emails metadata can be done with a simple script.
 
 Create an index:
 
@@ -178,9 +220,9 @@ A front-end can be used to search in email archives:
 
 ## Search in emails without indexation process
 
-### Inbuild command
+### Inbuilt command
 
-The `-s` and `--search` shell argument with a filter parameter with the syntax of `Keyword,"fnmatch syntax"` can be used to perform simple a simple search in the local_folder for emails. The local_folder is taken from the current configuration or `-l`/`--local-folder` shell argument.
+The `-s` and `--search` shell argument with a filter parameter with the syntax of `Keyword,"fnmatch syntax"` can be used to perform a simple search in the local_folder for emails. The local_folder is taken from the current configuration or `-l`/`--local-folder` shell argument.
 
 The possible keys (case sensitive) are listed in the `Metadata file` section.
 
@@ -193,7 +235,7 @@ imapbox --search WithText,True         # check boolean value
 imapbox --local-folder ./backups --search From,"user@domain.*"
 ```
 
-`fnmatch` accepts shell-style wildcards, `*` as any length of characters and `?` as single character as well as `[seq]` for any of the defined characters in the group and `[!seq]` for none of the characters in the group. See: https://docs.python.org/3/library/fnmatch.html
+`fnmatch` accepts shell-style wildcards, `*` as any length of characters and `?` as a single character as well as `[seq]` for any of the defined characters in the group and `[!seq]` for none of the characters in the group. See: https://docs.python.org/3/library/fnmatch.html
 
 
 ### Shell scripts
@@ -224,15 +266,15 @@ gci -r -filter *.json |% { gc $_ | ConvertFrom-Json } |? { $_.UTC -gt "20240813T
 
 ## Restoring emails
 
-The EML files are the restoreable files. These can be opened with Outlook, Thunderbird, MacOS Mail and most other email software, as well as showing the UTF-8 content on commandline.
+The EML files are the restorable files. These can be opened with Outlook, Thunderbird, MacOS Mail and most other email software, as well as showing the UTF-8 content on command line.
 
-The EML files text files, UTF-8 encoded, and compressed by gzip before backuped.
+The EML files are text files, UTF-8 encoded, and compressed by gzip before being backed up.
 
 ### Using a graphical desktop
 
-The unziped files can be double-clicked on most systems to view the mail, and may be drag-and-dropped into a mail account to be uploaded to that account.
+The unzipped files can be double-clicked on most systems to view the mail, and may be drag-and-dropped into a mail account to be uploaded to that account.
 
-It might help to navigate with a file browser into the specific backup folder, find all `raw.eml.gz` files, unzip them into a temp folder, then drag all EML files from there into your mail softwares account's folder.
+It might help to navigate with a file browser into the specific backup folder, find all `raw.eml.gz` files, unzip them into a temp folder, then drag all EML files from there into your mail software's account folder.
 
 ### Using the commandline
 
@@ -250,7 +292,7 @@ It might help to navigate with a file browser into the specific backup folder, f
 
 ## Local install
 
-This script requires **Python 3.4+** and the following libraries:
+This script requires **Python 3.13+** and the following libraries:
 * [chardet](https://pypi.python.org/pypi/chardet) – required for character encoding detection.
 * [pdfkit](https://pypi.python.org/pypi/pdfkit) – optionally required for archiving emails to PDF.
 

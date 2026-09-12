@@ -8,12 +8,12 @@ import configparser
 import os
 import sys
 import getpass
-from utilities import errorHandler, get_version, is_docker
+from utilities import errorHandler, get_version, is_docker, DollarInterpolation
 from search import do_search
 
 
 def load_configuration(args):
-    config = configparser.ConfigParser(allow_no_value=True)
+    config = configparser.ConfigParser(allow_no_value=True, interpolation=DollarInterpolation(), allow_unnamed_section=True)
     if (args.specific_config):
         locations = args.specific_config
     else:
@@ -68,7 +68,7 @@ def load_configuration(args):
     else:
         for section in config.sections():
 
-            if ('imapbox' == section):
+            if ('imapbox' == section or section == configparser.UNNAMED_SECTION):
                 continue
 
             if (args.specific_account and (args.specific_account != section)):
@@ -156,10 +156,10 @@ def main():
     argparser.add_argument('-a', '--account', dest='specific_account', metavar='ACCOUNT', help='Select a specific account to backup')
     argparser.add_argument('-f', '--folders', dest='specific_folders', help='Backup into specific account subfolders', action='store_true')
     argparser.add_argument('-w', '--wkhtmltopdf', dest='wkhtmltopdf', metavar='PATH', help='The location of the wkhtmltopdf binary')
-    argparser.add_argument('-t', '--test', dest='test_only', nargs='?', const=True, default=False, metavar='"folders"', help='Only a connection and folder retrival test will be performed, adding the optional "folders" as parameter will also show the found folders')
+    argparser.add_argument('-t', '--test', dest='test_only', nargs='?', const=True, default=False, metavar='"folders"', help='Only a connection and folder retrieval test will be performed, adding the optional "folders" as parameter will also show the found folders')
     argparser.add_argument('-c', '--config', dest='specific_config', metavar='PATH', help='Path to a config file to use')
     argparser.add_argument('-v', '--version', dest='show_version', help='Show the current version', action='store_true')
-    argparser.add_argument('-s', '--search', dest='search_filter', metavar='FILTER', help='Search in backuped emails (Filter: `Keyword,\"fnmatch syntax\"`)')
+    argparser.add_argument('-s', '--search', dest='search_filter', metavar='FILTER', help='Search in backed-up emails (Filter: `Keyword,\"fnmatch syntax\"`)')
     args = argparser.parse_args()
     options = load_configuration(args)
     rootDir = options['local_folder']
@@ -179,9 +179,9 @@ def main():
                 folders = get_folders(account)
                 if options['test_only'] == 'folders':
                     print(' - Folders:', ', '.join(folders) )
-                print(' - SUCCESS: Login and folder retrival')
+                print(' - SUCCESS: Login and folder retrieval')
             except:
-                errorHandler(None, ' - FAILED: Login and folder retrival', exitCode=None)
+                errorHandler(None, ' - FAILED: Login and folder retrieval', exitCode=None)
             continue
 
         if options['specific_folders']:
