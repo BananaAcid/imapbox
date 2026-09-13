@@ -13,6 +13,24 @@ IMAP server, the real `imapbox` image, Elasticsearch and the Calaca search UI).
 
 Tear down with `.\mock-imapbox.ps1 -Down`.
 
+## Seed extra folders (`mock-seed-folders.ps1`)
+
+Optional helper: SMTP can only deliver into `INBOX`, so this script seeds additional
+folders for `alice@example.com` via raw IMAP on `127.0.0.1:3143`:
+
+- creates `Draft`, `Trash` and `INBOX.important projects.someemail`
+- appends 6 dummy mails: Draft 2026 ×2, Draft 2024 ×1, Trash 2026 ×2, subfolder 2026 ×1
+
+```powershell
+.\mock-seed-folders.ps1
+```
+
+Each run generates a fresh `Message-ID`/`UUID`, so rerunning it appends more unique test
+mails (archived by imapbox as *new* on the next tick). The `cache\config\config.cfg`
+[alice] DSN lists these folders, archived with flat names like
+`archive/alice/INBOX.important projects.someemail/2026/<id>`. Note: GreenMail keeps
+mailboxes in memory, so seeds are lost if the GreenMail container restarts.
+
 ## Test
 
 Open **http://localhost:8088** (Calaca) and search with `*` to see all 20 indexed emails.

@@ -123,12 +123,16 @@ foreach ($User in $Accounts) {
 @"
 [imapbox]
 server=*/2 * * * *
+specific_folders=true
 
 $($AccountSections -join "`n")
 "@ | Set-Content -LiteralPath $ConfigFile -Encoding utf8
 
 # one-shot config (accounts only, no [imapbox] server): used for the immediate backup run
 @"
+[imapbox]
+specific_folders=true
+
 $($AccountSections -join "`n")
 "@ | Set-Content -LiteralPath $OnceConfigFile -Encoding utf8
 

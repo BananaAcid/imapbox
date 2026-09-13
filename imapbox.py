@@ -274,10 +274,11 @@ def do_accounts(options):
                 folders = str.split(account['remote_folder'], ',')
             for folder_entry in folders:
                 folder_entry_decoded = imaputf7decode(folder_entry);
-                print("Saving folder: " + folder_entry_decoded) 
-                account['remote_folder'] = folder_entry
-                options['local_folder'] = os.path.join(basedir, folder_entry_decoded.replace('"', ''))
-                save_emails(account, options)
+                print("Saving folder: " + folder_entry_decoded)
+                folder_account = dict(account)
+                folder_account['remote_folder'] = folder_entry
+                local_folder = os.path.join(basedir, folder_entry_decoded.replace('"', ''))
+                save_emails(folder_account, options, local_folder)
         except Exception as e:
             dispatch(options['hooks'], 'error', make_mail_item('error', account, None, None, success=False, error={'error': str(e)}))
             errorHandler(e, ' - FAILED')

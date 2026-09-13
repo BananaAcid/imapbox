@@ -210,13 +210,15 @@ class MailboxClient:
         return new_directory
 
 
-def save_emails(account, options):
+def save_emails(account, options, local_folder=None):
     mailbox = MailboxClient(account['host'], account['port'], account['username'], account['password'], account['remote_folder'], account['ssl'])
     if mailbox.selected_folder is True:
+        if local_folder is None:
+            local_folder = options['local_folder']
         mailbox.account = account
         mailbox.account_name = account['name']
         mailbox.hookbuffer = options.get('_hookbuffer', []) or []
-        stats = mailbox.copy_emails(options['days'], options['local_folder'], options['wkhtmltopdf'], options.get('hooks'))
+        stats = mailbox.copy_emails(options['days'], local_folder, options['wkhtmltopdf'], options.get('hooks'))
         mailbox.cleanup()
         if stats[0] == 0 and stats[1] == 0:
             print('\r- Done. Is empty')
