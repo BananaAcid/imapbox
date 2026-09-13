@@ -661,7 +661,7 @@ If you run this multiple times, remove the previously generated images and conta
 6. `docker push [USERNAME]/imapbox:$(cat VERSION)`
 7. `docker push [USERNAME]/imapbox:latest`
 
-Pushing to Docker Hub requires the image name ("username/imapbox") to be exactly what the website shows in "Docker commands".
+Pushing to Docker Hub requires the image name ("username/imapbox") to be exactly what the website shows in "Docker commands". (Lower case image name!)
 
 ## Similar projects
 
