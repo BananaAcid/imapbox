@@ -118,6 +118,7 @@ foreach ($User in $Accounts) {
     $AccountSections += @("[$Login]`ndsn=$Dsn`n")
 }
 
+if (-not $NoClean) {
 # main config: has the 2-minute cron in the [imapbox] section (drives the server, since the
 # test compose file does not pass --server anymore)
 @"
@@ -137,6 +138,7 @@ $($AccountSections -join "`n")
 "@ | Set-Content -LiteralPath $OnceConfigFile -Encoding utf8
 
 Write-Host "✅ Wrote config: $ConfigFile" -ForegroundColor Green
+
 
 # --- 4. Write the test compose override (top-level volumes only + command without --server) ---
 # note: compose is resolved against the imapbox/ folder (--project-directory). Both the stack
@@ -180,6 +182,7 @@ volumes:
 "@ | Set-Content -LiteralPath $TestCompose -Encoding utf8
 
 Write-Host "✅ Wrote compose override: $TestCompose" -ForegroundColor Green
+}
 
 # --- 5. Validate the merged compose file ---
 Write-Host "🧪 Validating merged compose file ..." -ForegroundColor Cyan

@@ -14,6 +14,7 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - **Compatibility with polo2ro's version is preserved**
 >
 > Some new features:
+> - Webhooks for automation or notifiction ... or both
 > - Server mode (execute, defined by cron compatible config string)
 > - Test only mode (login credentials test), optionally output list of folders
 > - Argument to specify a specific config file
@@ -30,6 +31,7 @@ This program aims to save a mailbox for archive using files in indexable or sear
 > - icloud emails support
 > - Folder name IMAP-UTF-7 decoding (umlauts and more work)
 > - PDFs includes images and PDFs for text only emails
+> - Interpolation in the config file (refernecing other sections or environment variables)
 > - Tested on 200+ GB and 10+ years of real emails to fix crashes
 
 ## Quick use, using the released binary
@@ -369,7 +371,22 @@ A status target (`accountstart`, `accountdone`, `newmails`, `done`) receives a s
   ```bash
   imapbox --hook 'newmail,"post+https://example.net/hook?id=${metadata.id}&from=${metadata.From[0]}"'
   ```
-* any other target is treated as an executable and receives the JSON payload on its standard input (stdin).
+* any other target is treated as an executable and receives the JSON payload on its standard input (stdin). Extra comma separated arguments after the target are passed to the executable as command line arguments, e.g. a Discord webhook shell:
+
+  ```bash
+  imapbox --hook 'newmail,"./hook-notifyOnDiscord.py","https://discord.com/api/webhooks/ID/TOKEN"'
+  ```
+
+  Inside docker a relative target is resolved against the folder that contains the active `config.cfg` first, then against the application folder (i.e. `./hook-notifyOnDiscord.py` resolves to `/etc/imapbox/hook-notifyOnDiscord.py` when that file exists there, otherwise `/opt/bin/hook-notifyOnDiscord.py`). If the resolved file is not executable, the executable bit is added automatically before it is run. Ensure your hook script has a correct shebang line (e.g. `#!/usr/bin/env python3` or `#!/bin/sh`) — without it the executable bit alone is not enough to run it. The bundled `hook-notifyOnDiscord.py` is a self-contained hook (standard library only) that posts a rich embed summary - not the raw JSON - of `newmail`, `error` and status events to a Discord-compatible webhook; run it directly to see its usage.
+
+### Automation examples
+
+Because every hook target simply receives the event payload (JSON on stdin, or as a webhook body with `${...}` placeholders), imapbox can plug into any automation platform that speaks HTTP or runs shell commands:
+
+* **Discord / Slack / Mattermost / any Discord-compatible webhook** — point `newmail` at the bundled `hook-notifyOnDiscord.py` or `post+https://discord.com/api/webhooks/ID/TOKEN` for raw JSON.
+* **n8n / Huginn / Activepieces / Zapier / Make** — use the `http` target format with a workflow trigger URL: `imapbox --hook newmail,"post+https://your-n8n-instance/webhook/imapbox-newmail"`. The workflow receives the full payload and can branch, filter, transform, or forward to any service.
+* **Custom HTTP services** — any endpoint that accepts `POST` or `PUT` with JSON can be a hook target; add placeholder paths to route individual mails.
+* **Custom shell scripts** — a `.sh` or `.py` script receives the full JSON payload on stdin, giving full control over the event: filter by sender/subject, query a database, post to a different API, or perform any logic. The bundled `hook-notifyOnDiscord.py` is an example of this pattern.
 
 Each hook target runs in its own thread, in parallel.
 

@@ -6,17 +6,33 @@ import json
 import os
 import re
 import subprocess
+import sys
 import threading
 import urllib.parse
 import urllib.request
 
-from utilities import errorHandler
+from utilities import errorHandler, is_docker
 
 
 # dispatched hook targets run in threads; the registry lets the main process
 # wait for them to finish before it exits (otherwise daemon threads are killed)
 _active_threads = []
 _active_lock = threading.Lock()
+
+
+# event names that can start a new hook entry while splitting a hook value
+_KNOWN_EVENTS = frozenset({'serverstart', 'accountstart', 'accountdone', 'newmail', 'newmails', 'done', 'error', 'all'})
+
+# base folders used to resolve relative executable hook targets inside docker:
+# the folder the active config.cfg lives in is preferred, then the application folder
+_config_dir = None
+_app_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
+
+
+def set_config_dir(path):
+    """Register the folder the active config.cfg lives in (used to resolve relative hook executables in docker)."""
+    global _config_dir
+    _config_dir = path
 
 
 # Events:
@@ -29,18 +45,9 @@ _active_lock = threading.Lock()
 #   all           - wildcard, fired on any event above
 
 
-def parse_hook_entry(entry):
-    """Validate and split a --hook "event,\"target\"" entry, returns (event, target)."""
-    event, sep, target = entry.partition(',')
-    if not sep:
-        raise ValueError('expected "event,\\"command\\""')
-    return event.strip(), target.strip().strip('"').strip("'")
-
-
-def split_hook_entries(value):
-    """Split a comma-separated list of hook entries into `event,"target"` entries.
-    Newlines are handled too, so a value spanning several indented (continued)
-    config lines works as well."""
+def _tokenize(value):
+    """Split a hook value into tokens on commas and newlines, honouring double/single quotes.
+    Quotes are kept in the returned tokens, surrounding whitespace is stripped."""
     tokens = []
     current = ''
     quote = None
@@ -59,13 +66,39 @@ def split_hook_entries(value):
             current += char
     if current.strip():
         tokens.append(current.strip())
+    return tokens
 
-    entries = []
-    for i in range(0, len(tokens), 2):
-        event = tokens[i]
-        target = tokens[i + 1] if i + 1 < len(tokens) else ''
-        entries.append(event + (',' + target if target else ''))
-    return entries
+
+def _strip_quotes(token):
+    token = token.strip()
+    if len(token) >= 2 and ((token[0] == token[-1] == '"') or (token[0] == token[-1] == "'")):
+        return token[1:-1]
+    return token
+
+
+def parse_hook_entry(entry):
+    """Validate and split a `event,"target"[,"arg",...]` entry, returns (event, target, args)."""
+    tokens = [_strip_quotes(t) for t in _tokenize(entry)]
+    if len(tokens) < 2:
+        raise ValueError('expected "event,\\"command\\"[,"arg",...]"')
+    return tokens[0], tokens[1], tokens[2:]
+
+
+def split_hook_entries(value):
+    """Split a comma-separated list of hook entries into `event,"target"[,"arg"...]` entries.
+    Newlines are handled too, so a value spanning several indented (continued)
+    config lines works as well. A token matching a known event name starts a new
+    entry once the current entry already has its target set."""
+    tokens = _tokenize(value)
+    grouped = []
+    for token in tokens:
+        if token in _KNOWN_EVENTS and grouped and len(grouped[-1]) >= 2:
+            grouped.append([token])
+        elif grouped:
+            grouped[-1].append(token)
+        else:
+            grouped.append([token])
+    return [','.join(group) for group in grouped if group]
 
 
 def account_info(account):
@@ -126,24 +159,24 @@ def dispatch_status(hooks, event_names, payload):
 
 
 def _dispatch_targets(hooks, event_names, payload):
-    targets = []
+    entries = []
     seen = set()
     for event_name in event_names:
-        for target in hooks.get(event_name, []):
-            if target not in seen:
-                seen.add(target)
-                targets.append(target)
-    for target in hooks.get('all', []):
-        if target not in seen:
-            seen.add(target)
-            targets.append(target)
+        for entry in hooks.get(event_name, []):
+            if entry not in seen:
+                seen.add(entry)
+                entries.append(entry)
+    for entry in hooks.get('all', []):
+        if entry not in seen:
+            seen.add(entry)
+            entries.append(entry)
 
-    if not targets:
+    if not entries:
         return
 
     data = json.dumps(payload, ensure_ascii=False).encode('utf-8')
-    for target in targets:
-        thread = threading.Thread(target=_run_target, args=(target, data, payload), daemon=True)
+    for target, args in entries:
+        thread = threading.Thread(target=_run_target, args=(target, args, data, payload), daemon=True)
         thread.start()
         with _active_lock:
             _active_threads.append(thread)
@@ -212,11 +245,38 @@ def _render_url(url, payload):
     return _placeholder_re.sub(replace, url)
 
 
-def _run_target(target, data, payload):
-    """Run a single hook target: URL (get+/post+/put+/delete+ with optional ${...} placeholders) -> HTTP, else executable with JSON piped to stdin."""
+def _resolve_path(target):
+    """Resolve a relative executable hook target. Inside docker the folder the active config.cfg
+    lives in is checked first, then the application folder; the first file found wins.
+    Outside docker (or for absolute targets) the target is used unchanged."""
+    if os.path.isabs(target):
+        return target
+    if is_docker():
+        candidates = []
+        if _config_dir:
+            candidates.append(os.path.join(_config_dir, target))
+        candidates.append(os.path.join(_app_dir, target))
+        for candidate in candidates:
+            if os.path.isfile(candidate):
+                return candidate
+    return target
+
+
+def _run_target(target, args, data, payload):
+    """Run a single hook target: URL (get+/post+/put+/delete+ with optional ${...} placeholders) -> HTTP,
+    else executable (with extra args, JSON piped to stdin)."""
+    label = payload.get('event') if isinstance(payload, dict) else None
+    item_id = None
+    if isinstance(payload, dict) and isinstance(payload.get('metadata'), dict):
+        item_id = payload['metadata'].get('id')
+    if label or item_id is not None:
+        label = (label or '?') + (f'(id={item_id})' if item_id is not None else '')
+
     method, url = _split_method(target)
     if url.startswith('http://') or url.startswith('https://'):
         url = _render_url(url, payload)
+        params = url.split('?', 1)[1] if '?' in url else None
+        print(f'Hook {label}: {method} {url}' + (f'  params: {params}' if params else ''))
         try:
             request = urllib.request.Request(url,
                                              data=None if method == 'GET' else data,
@@ -226,12 +286,19 @@ def _run_target(target, data, payload):
         except Exception as e:
             errorHandler(None, f'Hook {method} to {url} failed: {e}', exitCode=None)
     else:
+        command = _resolve_path(target)
+        print(f'Hook {label}: {command}' + (f'  params: {" ".join(args)}' if args else ''))
         try:
-            if not os.access(target, os.X_OK):
-                errorHandler(None, f'Hook target is not executable: {target}', exitCode=None)
+            # the user is responsible for a correct shebang line (e.g. #!/usr/bin/env python3)
+            # in their hook script; without it the executable bit alone is not enough to run it
+            if os.path.isfile(command) and not os.access(command, os.X_OK):
+                os.chmod(command, os.stat(command).st_mode | 0o111)  # +x so the shebang works
+                print(f'Hook {label}: set executable bit on {command}')
+            if os.path.isfile(command) and not os.access(command, os.X_OK):
+                errorHandler(None, f'Hook target is not executable: {command}', exitCode=None)
                 return
-            subprocess.run([target], input=data,
+            subprocess.run([command] + list(args), input=data,
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                            check=False)
         except Exception as e:
-            errorHandler(None, f'Hook failed: {target}: {e}', exitCode=None)
+            errorHandler(None, f'Hook failed: {command}: {e}', exitCode=None)

@@ -7,13 +7,14 @@ COPY *.py .
 COPY requirements.txt .
 COPY VERSION .
 COPY hook-addToElasticSearch.sh /etc/imapbox/.
+COPY hook-notifyOnDiscord.py /etc/imapbox/.
 COPY example-config.cfg /etc/imapbox/config.cfg
 
 # Remove the local_folder line
 RUN sed -i '/^local_folder=/d' /etc/imapbox/config.cfg && sed -i '/^wkhtmltopdf=/d' /etc/imapbox/config.cfg
 
-# Make the hook executable, in case it will be needed
-RUN chmod +x /etc/imapbox/hook-addToElasticSearch.sh
+# Make the hooks executable, in case they will be needed
+RUN chmod +x /etc/imapbox/hook-addToElasticSearch.sh /etc/imapbox/hook-notifyOnDiscord.py
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt

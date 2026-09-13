@@ -13,7 +13,7 @@ import getpass
 from utilities import errorHandler, get_version, is_docker, imaputf7decode, DollarInterpolation
 from search import do_search
 from server import start_server
-from hooks import dispatch, dispatch_status, make_mail_item, make_status_item, account_directories, all_directories, parse_hook_entry, split_hook_entries, join_hooks
+from hooks import dispatch, dispatch_status, make_mail_item, make_status_item, account_directories, all_directories, parse_hook_entry, split_hook_entries, join_hooks, set_config_dir
 
 
 def load_configuration(args):
@@ -22,7 +22,9 @@ def load_configuration(args):
         locations = args.specific_config
     else:
         locations = ['./config.cfg', '/etc/imapbox/config.cfg', os.path.expanduser('~/.config/imapbox/config.cfg')]
-    config.read(locations)
+    read_files = config.read(locations)
+    if read_files:
+        set_config_dir(os.path.dirname(os.path.abspath(read_files[0])))
 
     options = {
         'days': None,
@@ -71,8 +73,8 @@ def load_configuration(args):
                 if option not in ('hook', 'hooks'):
                     continue
                 for entry in split_hook_entries(value):
-                    event, target = parse_hook_entry(entry)
-                    options['hooks'].setdefault(event, []).append(target)
+                    event, target, hook_args = parse_hook_entry(entry)
+                    options['hooks'].setdefault(event, []).append((target, tuple(hook_args)))
         except (configparser.Error, ValueError) as e:
             errorHandler(e, 'Invalid hook in config (expected "event,\\"target\\"[, ...]")')
 
@@ -181,11 +183,12 @@ def load_configuration(args):
 
     if args.hooks:
         for entry in args.hooks:
-            event, sep, command = entry.partition(',')
-            if not sep:
-                errorHandler(entry, 'Invalid --hook (expected "event,\\"command\\"")')
+            try:
+                event, target, hook_args = parse_hook_entry(entry)
+            except ValueError:
+                errorHandler(entry, 'Invalid --hook (expected "event,\\"command\\"[,\\"arg\\",...]")')
                 continue
-            options['hooks'].setdefault(event.strip(), []).append(command.strip().strip('"').strip("'"))
+            options['hooks'].setdefault(event, []).append((target, tuple(hook_args)))
 
     if args.show_version:
         print(get_version())
