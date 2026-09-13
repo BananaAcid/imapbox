@@ -91,6 +91,10 @@ specific_folders=True
 # test_only=True
 ## cron -> At minute 0 past every 4th hour -> see https://crontab.guru/#0_*/4_*_*_*
 # server=0 */4 * * *
+# hooks for newly saved emails, one entry per indented line, see "Hooks"
+# hooks =
+#     newmail,"/opt/bin/hook-addToElasticSearch.sh"
+#     ...
 
 
 [accountName1]
@@ -130,6 +134,7 @@ Argument                      | Description
 -so, --search-output TYPE     | Search result output type "text" or "json" (default: "text")
 -i, --input-dsn               | Helper to generate a DSN string, adding the optional "gui" parameter will open the DSN generator in a GUI (if the optional module is installed), can be used with --test <br> see [about DSN](#about-dsn)
 --server CRONTABSTRING        | Starts as a server, triggering with the specified cron string, see https://crontab.guru
+--hook EVENT,"TARGET"         | Run the specified TARGET whenever the EVENT happens, can be repeated, see [Hook based automation](#hook-based-automation)
 
 #### Note
 
@@ -148,6 +153,7 @@ wkhtmltopdf     | The location of the `wkhtmltopdf` binary, path can be left out
 specific_folders| Backup into specific account subfolders. By default all accounts will be combined into one account folder. This can be overwritten with the shell argument `-f` or `--folders`.
 test_only       | Set to True and only a connection and folder retrieval test will be performed, adding the optional `folders` as parameter will also show the found folders. This can be overwritten with the shell argument `-t` or `--test`.
 server          | A specified cron string to start as a server, triggering with the specified cron string, see https://crontab.guru on how to define one. This can be overwritten with the shell argument `--server`
+hooks           | Hooks to run whenever events happen, a multi-line list with one `event,"target"` entry per indented line, or a comma separated list on a single line, see [Hook based automation](#hook-based-automation)
 
 ### Other sections
 
@@ -259,7 +265,15 @@ WithText        | Boolean, if the `message.txt` file exists or not
 ## Elasticsearch
 
 The `metadata.json` file contains the necessary information for a search engine like [Elasticsearch](http://www.elasticsearch.com/).
-Populating an Elasticsearch index with the emails metadata can be done with a simple script.
+Populating an Elasticsearch index with the emails metadata can be done with a simple script, or automatically while running imapbox with the example `hook-addToElasticSearch.sh` hook file (register it on the `newmail` event, see [Hooks](#hook-based-automation)), which indexes the `metadata.json` of every newly saved email.
+
+Alternatively, the [webhook](#hook-based-automation) form of the `newmail` hook can index the full item payload as it is saved, one document per email, using the mail id as the document id (see [Hook based automation](#hook-based-automation) for the `${metadata.id}` placeholder). Combined with a `serverstart` webhook that creates the index, no external script is needed:
+
+```bash
+imapbox --server "0 */4 * * *" \
+  --hook 'serverstart,"put+http://elasticsearch:9200/imapbox"' \
+  --hook 'newmail,"put+http://elasticsearch:9200/imapbox/_doc/${metadata.id}"'
+```
 
 Create an index:
 
@@ -295,6 +309,69 @@ The same applies for adding to CouchDB (the `imapbox` db must exist), just repla
 ```bash
 curl -XPUT "localhost:5984/imapbox/${ID}" --data-binary "@${METADATAPATH}"
 ```
+
+## Hook based automation
+
+Hooks run a target whenever selected events happen, for example to index the newly created `metadata.json` files into Elasticsearch (see the example `hook-addToElasticSearch.sh` hook file in this repository) or to notify a webhook about the run.
+
+Hooks can be configured in the `[imapbox]` section of the config file, as a multi-line list (each indented line is an `event,"target"` entry), or as a comma separated list on a single line:
+
+```ini
+[imapbox]
+hooks =
+    newmail,"/opt/bin/hook-addToElasticSearch.sh"
+    all,"http://host.docker.internal:8088/"
+    done,"./hook2.sh"
+```
+
+or with the shell argument `--hook EVENT,"TARGET"`, repeated multiple times:
+
+```bash
+imapbox --hook newmail,"./hook-addToElasticSearch.sh" --hook done,"http://host.docker.internal:8088/"
+```
+
+Both can be combined, all configured hooks are fired.
+
+### Events
+
+Event              | Fired                          | Payload
+-------------------|--------------------------------|------------------
+serverstart        | when a `--server` process becomes ready, before any account is checked | [status payload](#payload) with `account` set to `null` and empty `directories`
+accountstart       | when starting to check an account | [status payload](#payload), `directories` contains the main folder of the account
+newmail            | for every single processed mail | [item payload](#payload) with the full metadata of the mail
+accountdone        | when an account was processed   | [status payload](#payload), `directories` contains the new mail directories of the account
+newmails / done    | after the whole run, handled equally | [status payload](#payload) with `account` set to `null` and `directories` containing all new mail directories of the run
+error              | on any failure                  | [item payload](#payload) like `newmail` with `success: false` and the `error` details, with whatever information was possible
+all                | on any event above, in addition | same payload as the fired event
+
+### Payload
+
+An item target (`newmail`, `error`) receives a JSON array with a single item:
+
+```json
+{"event": "newmail", "success": true, "error": {}, "directory": "/var/imapbox/INBOX/2026/...id...", "account": {"name": "...", "host": "...", "port": "...", "username": "...", "remote_folder": "INBOX", "ssl": true}, "metadata": {"Id": "...", "Subject": "...", "From": ["..."], "To": [["...email...", "...name..."]], "Cc": [], "Date": "Day, 00 Abc 2026 00:00:00 +0000", "Utc": "", "Attachments": [], "WithHtml": false, "WithText": true, "Body": "...\r\n"}}
+```
+
+The `account` object contains the account parameters, without the password or DSN. The `metadata` object is the exact content of the mail `metadata.json` file.
+
+A status target (`accountstart`, `accountdone`, `newmails`, `done`) receives a single JSON object:
+
+```json
+{"event": "done", "success": true, "error": {}, "account": null, "path": "/var/imapbox", "directories": ["/var/imapbox/INBOX/2026/...id..."]}
+```
+
+`directories` only ever contains new mail directories (except for `accountstart`, where it contains the main folder of the account).
+
+### Targets
+
+* A target starting with `http://` or `https://` is treated as a webhook and receives the payload as JSON. The request method defaults to `POST`, prefix the target with `get+`, `post+`, `put+` or `delete+` to force the HTTP verb (e.g. `post+https://host:8088/something`).
+* Webhook URLs support `${...}` placeholders that are resolved against the JSON payload: dotted paths with case-insensitive key matching and `[i]` list indexing, values are URL-encoded and inserted as-is during the request (`${id}` is an alias for `${metadata.id}`). Placeholders that cannot be resolved are kept literally:
+  ```bash
+  imapbox --hook 'newmail,"post+https://example.net/hook?id=${metadata.id}&from=${metadata.From[0]}"'
+  ```
+* any other target is treated as an executable and receives the JSON payload on its standard input (stdin).
+
+Each hook target runs in its own thread, in parallel.
 
 ## Search in emails without indexation process
 

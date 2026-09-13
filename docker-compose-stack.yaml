@@ -1,0 +1,75 @@
+services:
+
+  imapbox:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: imapbox
+    extra_hosts:
+      # so webhooks work with host
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # change the path 'archive' to your back up folder
+      - archive:/var/imapbox/
+
+      # change the path 'config' to your config folder
+      - config:/etc/imapbox/
+
+      # change the path './config.cfg' to the config
+      # mounting files: an absolute path is always required
+      #- ${PWD}/tmp/config.cfg:/etc/imapbox/config.cfg
+      #
+      # relative binding works fine
+      #- type: bind
+      #  source: ./tmp/config.cfg
+      #  target: /etc/imapbox/config.cfg
+
+    # starts imapbox as a server (cron string, see https://crontab.guru)
+    # and runs a hook for every newly saved email
+    command: ["--server", "0 */4 * * *", "--hook", "serverstart,\"put+http://elasticsearch:9200/imapbox\"", "--hook", "newmail,\"put+http://elasticsearch:9200/imapbox/_doc/$${metadata.id}\""]
+
+    # example: send every event to a webhook on the host (uncomment to use)
+    #command: ["--hook", "all,\"http://host.docker.internal:8088/\""]
+
+    # example: send only newmail events to a webhook script (that is executable)
+    #command: ["--hook", "newmail,\"/etc/imapbox/hook-addToElasticSearch.sh\""]
+
+    depends_on:
+      - elasticsearch
+
+  elasticsearch:
+    image: elasticsearch:9.5.3
+    container_name: elasticsearch
+    environment:
+      # CORS is required so the Calaca UI (running in the browser) can reach Elasticsearch
+      http.cors.enabled: "true"
+      # ES 8+/9 generates elasticsearch.yml from these env vars, so the value must be
+      # valid YAML: '*' unquoted is an anchor alias, hence the escaped double quotes.
+      http.cors.allow-origin: '"*"'
+      # ES 9 defaults to security on (HTTPS + auth) and cluster bootstrap; disable for the test stack
+      xpack.security.enabled: "false"
+      discovery.type: "single-node"
+
+      # on a 4TB drive, 90% for flood_stage is leaving out a lot of space
+      cluster.routing.allocation.disk.watermark.low: "90%"
+      cluster.routing.allocation.disk.watermark.high: "95%"
+      cluster.routing.allocation.disk.watermark.flood_stage: "98%"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+
+  calaca:
+    build:
+      context: ./
+      dockerfile: Dockerfile.calaca
+    container_name: calaca
+    ports:
+      - "8088:80"
+    depends_on:
+      - elasticsearch
+
+volumes:
+  archive:
+  config:
+  esdata:

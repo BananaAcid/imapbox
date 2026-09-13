@@ -1,0 +1,31 @@
+# Lightweight web server for the Calaca search UI
+# (https://github.com/polo2ro/Calaca), the imapbox-specific Elasticsearch frontend.
+FROM nginx:alpine
+
+RUN apk add --no-cache git \
+    && git clone --depth 1 https://github.com/polo2ro/Calaca.git /tmp/calaca \
+    && cp -a /tmp/calaca/. /usr/share/nginx/html \
+    && rm -rf /usr/share/nginx/html/.git /tmp/calaca \
+    # ES 8+/9 removed mapping types. An empty docType still yields an empty
+    # path segment (/imapbox//_search) in the bundled client; undefined makes
+    # it pick the index-only template (/imapbox/_search).
+    && sed -i \
+        's/var docType = "message";/var docType = undefined;/' \
+        /usr/share/nginx/html/js/config.js \
+    # imapbox webhooks index the full item payload, so the mail metadata ends up
+    # nested under result.metadata.*; adjust the result template accordingly.
+    && sed -i \
+        -e 's/{{result.Subject}}/{{result.metadata.Subject}}/g' \
+        -e 's/{{result.Date}}/{{result.metadata.Date}}/g' \
+        -e 's/{{result.From\[0\]}}/{{result.metadata.From[0]}}/g' \
+        -e 's/{{result.From\[1\]}}/{{result.metadata.From[1]}}/g' \
+        -e 's/ng-if="result.To"/ng-if="result.metadata.To"/g' \
+        -e 's/ng-repeat="to in result.To"/ng-repeat="to in result.metadata.To"/g' \
+        -e 's/ng-if="result.Cc"/ng-if="result.metadata.Cc"/g' \
+        -e 's/ng-repeat="cc in result.Cc"/ng-repeat="cc in result.metadata.Cc"/g' \
+        /usr/share/nginx/html/index.html \
+    # ES 7+ returns hits.total as {"value": n, "relation": "eq"}, which breaks the
+    # counter rendered from hitsCount; unwrap the object for the ES 9 total.
+    && sed -i \
+        's/hitsCount: result.hits.total/hitsCount: (typeof result.hits.total === "object" ? result.hits.total.value : result.hits.total)/' \
+        /usr/share/nginx/html/js/services.js

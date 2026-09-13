@@ -6,10 +6,18 @@ WORKDIR /opt/bin/
 COPY *.py .
 COPY requirements.txt .
 COPY VERSION .
+COPY hook-addToElasticSearch.sh /etc/imapbox/.
+COPY example-config.cfg /etc/imapbox/config.cfg
+
+# Remove the local_folder line
+RUN sed -i '/^local_folder=/d' /etc/imapbox/config.cfg && sed -i '/^wkhtmltopdf=/d' /etc/imapbox/config.cfg
+
+# Make the hook executable, in case it will be needed
+RUN chmod +x /etc/imapbox/hook-addToElasticSearch.sh
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-RUN apt-get update && apt-get install -y wkhtmltopdf
+RUN apt-get update && apt-get install -y wkhtmltopdf curl
 
 # Make the data and config directory a volume
 VOLUME ["/etc/imapbox/"]

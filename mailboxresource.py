@@ -9,6 +9,7 @@ import os
 from message import Message
 import datetime
 from utilities import errorHandler, imaputf7encode, createReliableFoldername, createReliableMessageId, hasTTY
+from hooks import dispatch, make_mail_item, append_buffer
 
 MAX_RETRIES = 5
 
@@ -88,13 +89,14 @@ class MailboxClient:
 
         return all_uids
     
-    def copy_emails(self, days, local_folder, wkhtmltopdf):
+    def copy_emails(self, days, local_folder, wkhtmltopdf, hooks=None):
 
         n_saved = 0
         n_exists = 0
 
         self.local_folder = local_folder
         self.wkhtmltopdf = wkhtmltopdf
+        self.hooks = hooks or {}
         criterion = 'ALL'
 
         if days:
@@ -114,8 +116,13 @@ class MailboxClient:
                         if hasTTY():
                             print('\r{0:.2f}% '.format(idx*100/total), end='')
 
-                        if self.saveEmail(data):
+                        new_directory = self.saveEmail(data)
+                        if new_directory:
                             n_saved += 1
+                            dispatch(self.hooks, 'newmail', make_mail_item('newmail', self.account, new_directory, self.last_metadata))
+                            append_buffer(self.hookbuffer, self.account_name, new_directory)
+                        elif self.last_error:
+                            dispatch(self.hooks, 'error', make_mail_item('error', self.account, self.last_directory, self.last_metadata, success=False, error={'error': self.last_error}))
                         else:
                             n_exists += 1
                         break
@@ -155,6 +162,10 @@ class MailboxClient:
 
 
     def saveEmail(self, data):
+        new_directory = None
+        self.last_error = None
+        self.last_directory = None
+        self.last_metadata = None
         for response_part in data:
             if isinstance(response_part, tuple):
                 msg = ""
@@ -179,25 +190,33 @@ class MailboxClient:
 
                 try:
                     message = Message(directory, msg, message_id)
-                    if message.checkIfExists(): return False
+                    if message.checkIfExists(): continue
                     message.createRawFile(data[0][1])
                     message.createMetaFile()
+                    self.last_metadata = message.metadata
                     message.extractAttachments()
 
                     if self.wkhtmltopdf:
                         message.createPdfFile(self.wkhtmltopdf)
 
+                    new_directory = directory
+
                 except Exception as e:
                     # ex: Unsupported charset on decode
+                    self.last_error = str(e)
+                    self.last_directory = directory
                     errorHandler(e, f'\rError: MailboxClient.saveEmail() failed for {directory}', exitCode=None)
 
-        return True
+        return new_directory
 
 
 def save_emails(account, options):
     mailbox = MailboxClient(account['host'], account['port'], account['username'], account['password'], account['remote_folder'], account['ssl'])
     if mailbox.selected_folder is True:
-        stats = mailbox.copy_emails(options['days'], options['local_folder'], options['wkhtmltopdf'])
+        mailbox.account = account
+        mailbox.account_name = account['name']
+        mailbox.hookbuffer = options.get('_hookbuffer', []) or []
+        stats = mailbox.copy_emails(options['days'], options['local_folder'], options['wkhtmltopdf'], options.get('hooks'))
         mailbox.cleanup()
         if stats[0] == 0 and stats[1] == 0:
             print('\r- Done. Is empty')

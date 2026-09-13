@@ -79,6 +79,7 @@ class Message:
         self.msg = msg
         self.directory = directory
         self.message_id = message_id
+        self.metadata = None
 
     def getmailheader(self, header_text, default="ascii"):
         """Decode header_text if needed"""
@@ -165,20 +166,22 @@ class Message:
 
         rfc2822, iso8601 = self.normalizeDate(self.msg['Date'])
 
+        self.metadata = {
+            'Id': self.message_id,
+            'Subject' : self.getSubject(),
+            'From' : self.getFrom(),
+            'To' : tos,
+            'Cc' : ccs,
+            'Date' : rfc2822,
+            'Utc' : iso8601,
+            'Attachments': attachments,
+            'WithHtml': len(parts['html']) > 0,
+            'WithText': len(parts['text']) > 0,
+            'Body': text_content
+        }
+
         with io.open(os.path.join(self.directory, 'metadata.json'), 'w', encoding='utf8') as json_file:
-            data = json.dumps({
-                'Id': self.message_id,
-                'Subject' : self.getSubject(),
-                'From' : self.getFrom(),
-                'To' : tos,
-                'Cc' : ccs,
-                'Date' : rfc2822,
-                'Utc' : iso8601,
-                'Attachments': attachments,
-                'WithHtml': len(parts['html']) > 0,
-                'WithText': len(parts['text']) > 0,
-                'Body': text_content
-            }, indent=4, ensure_ascii=False)
+            data = json.dumps(self.metadata, indent=4, ensure_ascii=False)
 
             json_file.write(data)
 

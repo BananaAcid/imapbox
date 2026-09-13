@@ -98,8 +98,17 @@ def createReliableMessageId(message_id, data):
         msg_id_safe = re.sub(r'[^a-zA-Z0-9_\-\.() ]+', '', message_id.strip())
     else:
         try:
+            # imaplib FETCH returns a list like [ (b'1 (BODY[] {n}', raw_message), b')' ]
+            # -> the raw bytes are data[0][1], NOT data[1] (which is the closing paren)
             if type(data) is list:
-                msg_id_safe = hashlib.sha224(data[1]).hexdigest()
+                raw = None
+                for part in data:
+                    if isinstance(part, tuple) and len(part) == 2:
+                        raw = part[1]
+                        break
+                if raw is None:
+                    raw = data[0]
+                msg_id_safe = hashlib.sha224(raw).hexdigest()
             else:
                 msg_id_safe = hashlib.sha224(data).hexdigest()
 
@@ -115,8 +124,17 @@ def createReliableFoldername(message_id, data):
         foldername = re.sub(r'[^a-zA-Z0-9_\-\.() ]+', '', message_id.strip())
     else:
         try:
+            # imaplib FETCH returns a list like [ (b'1 (BODY[] {n}', raw_message), b')' ]
+            # -> the raw bytes are data[0][1], NOT data[1] (which is the closing paren)
             if type(data) is list:
-                foldername = hashlib.sha224(data[1]).hexdigest()
+                raw = None
+                for part in data:
+                    if isinstance(part, tuple) and len(part) == 2:
+                        raw = part[1]
+                        break
+                if raw is None:
+                    raw = data[0]
+                foldername = hashlib.sha224(raw).hexdigest()
             else:
                 foldername = hashlib.sha224(data).hexdigest()
 

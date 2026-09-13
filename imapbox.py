@@ -13,6 +13,7 @@ import getpass
 from utilities import errorHandler, get_version, is_docker, imaputf7decode, DollarInterpolation
 from search import do_search
 from server import start_server
+from hooks import dispatch, dispatch_status, make_mail_item, make_status_item, account_directories, all_directories, parse_hook_entry, split_hook_entries, join_hooks
 
 
 def load_configuration(args):
@@ -33,12 +34,15 @@ def load_configuration(args):
         'search_output': None,
         'input_dsn': False,
         'server': None,
-        'accounts': []
+        'accounts': [],
+        'hooks': {},
+        '_hookbuffer': []
     }
 
-    # set default folder, if within a docker container
+    # set default folders, if within a docker container
     if is_docker():
         options['local_folder'] = '/var/imapbox'
+        options['wkhtmltopdf'] = '/usr/bin/wkhtmltopdf'
 
     if config.has_section('imapbox'):
         if config.has_option('imapbox', 'days'):
@@ -60,7 +64,17 @@ def load_configuration(args):
                 options['test_only'] = config.getboolean('imapbox', 'test_only')
 
         if config.has_option('imapbox', 'server'):
-            options['server'] = config.getboolean('imapbox', 'server')
+            options['server'] = config.get('imapbox', 'server').strip()
+
+        try:
+            for option, value in config.items('imapbox'):
+                if option not in ('hook', 'hooks'):
+                    continue
+                for entry in split_hook_entries(value):
+                    event, target = parse_hook_entry(entry)
+                    options['hooks'].setdefault(event, []).append(target)
+        except (configparser.Error, ValueError) as e:
+            errorHandler(e, 'Invalid hook in config (expected "event,\\"target\\"[, ...]")')
 
     if args.specific_dsn:
         for dsn in args.specific_dsn:
@@ -165,6 +179,14 @@ def load_configuration(args):
     if args.server:
         options['server'] = args.server
 
+    if args.hooks:
+        for entry in args.hooks:
+            event, sep, command = entry.partition(',')
+            if not sep:
+                errorHandler(entry, 'Invalid --hook (expected "event,\\"command\\"")')
+                continue
+            options['hooks'].setdefault(event.strip(), []).append(command.strip().strip('"').strip("'"))
+
     if args.show_version:
         print(get_version())
         sys.exit(0)
@@ -189,6 +211,7 @@ def main():
     argparser.add_argument('-so', '--search-output', dest='search_output', metavar='"text"|"json"', help='Search result output type (default: "text")', default="text", choices=['text', 'json'])
     argparser.add_argument('-i', '--input-dsn', dest='input_dsn', nargs='?', const=True, default=False, metavar='"gui"', help='Helper to generate a DSN string, adding the optional "gui" parameter will open the DSN generator in a GUI, can be used with --test')
     argparser.add_argument('--server', dest='server', metavar='CRONTABSTRING', help='Starts as a server, triggering with the specified cron string')
+    argparser.add_argument('--hook', dest='hooks', metavar='EVENT,"TARGET"', help='Run the specified TARGET whenever the EVENT happens (EVENT: serverstart, accountstart, newmail, accountdone, newmails, done, error, or all). TARGET is a URL (JSON posted via HTTP, defaults to POST, prefix "get+" to use GET) or an executable (JSON piped to its stdin). e.g. `--hook newmail,"./hook-addToElasticSearch.sh"` or `--hook all,"http://host.docker.internal:8088/"`. Can be repeated.', action='append')
     args = argparser.parse_args()
     options = load_configuration(args)
 
@@ -242,6 +265,8 @@ def do_accounts(options):
         else:
             basedir = rootDir
 
+        dispatch_status(options['hooks'], ['accountstart'], make_status_item('accountstart', account, basedir, [basedir]))
+
         try:
             if account['remote_folder'] == "__ALL__":
                 folders = get_folders(account)
@@ -254,7 +279,14 @@ def do_accounts(options):
                 options['local_folder'] = os.path.join(basedir, folder_entry_decoded.replace('"', ''))
                 save_emails(account, options)
         except Exception as e:
+            dispatch(options['hooks'], 'error', make_mail_item('error', account, None, None, success=False, error={'error': str(e)}))
             errorHandler(e, ' - FAILED')
+
+        dispatch_status(options['hooks'], ['accountdone'], make_status_item('accountdone', account, basedir, account_directories(options['_hookbuffer'], account['name'])))
+
+    dispatch_status(options['hooks'], ['done', 'newmails'], make_status_item('done', None, rootDir, all_directories(options['_hookbuffer'])))
+    options['_hookbuffer'].clear()
+    join_hooks()
 
 
 def sigint_handler(signal, frame):

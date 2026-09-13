@@ -3,6 +3,7 @@
 
 
 from utilities import errorHandler
+from hooks import dispatch_status, make_status_item, join_hooks
 import threading
 #from imapbox import do_accounts
 import croniter
@@ -27,6 +28,10 @@ def start_server(options, do_accounts):
 
     print("Started server")
     print("Cron: " + options['server'])
+
+    # signal that the server is ready, before any account is checked
+    dispatch_status(options['hooks'], ['serverstart'], make_status_item('serverstart', None, options['local_folder'], []))
+    join_hooks()
 
     cron = croniter.croniter(options['server'], datetime.datetime.now())
     next_cron = cron.get_next(datetime.datetime)
